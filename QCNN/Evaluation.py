@@ -11,7 +11,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_aer.primitives import EstimatorV2 as AerEstimator
-from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
+from qiskit_algorithms.gradients import SPSAEstimatorGradient
 from qiskit_machine_learning.connectors import TorchConnector
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
@@ -73,7 +73,7 @@ class HybridEvaluator(Evaluator):
 
         # Qiskit Aer Estimator for faster simulation
         self.estimator = AerEstimator()
-        self.grad_method = ParamShiftEstimatorGradient(self.estimator)
+        self.grad_method = SPSAEstimatorGradient(self.estimator, epsilon=0.01)
 
         if self.device.type == "cuda":
             # Use assignment instead of update() for Options object in Qiskit Aer V2
@@ -124,6 +124,7 @@ class HybridEvaluator(Evaluator):
             weight_params=list(qc.parameters),
             observables=observable,
             estimator=self.estimator,  # ใช้ Aer Estimator เร็วกว่า
+            gradient=self.grad_method,
             input_gradients=True,
         )
 

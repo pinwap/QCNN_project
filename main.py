@@ -36,7 +36,9 @@ def main():
         data_path="../data", n_train=200, n_test=50
     )  # Small subset for demo
     builder = QCNNBuilder(n_qubits=16)
-    evaluator = HybridEvaluator(builder, epochs=5, lr=0.01)  # 5 Epochs according to paper
+    evaluator = HybridEvaluator(
+        builder, epochs=5, lr=0.01
+    )  # 5 Epochs according to paper
 
     # 2. Inject into Experiment
     logger.info("Setting up experiment...")
