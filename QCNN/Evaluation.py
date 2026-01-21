@@ -10,13 +10,15 @@ import torch.optim as optim
 from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
 from qiskit.quantum_info import SparsePauliOp
+
 from qiskit_machine_learning.connectors import TorchConnector
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
 from QCNN.DataManager import BaseDataManager
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.QEA_core import QuantumChromosome
-from qiskit_aer.primitives import Estimator as AerEstimator
+
+from qiskit_aer.primitives import EstimatorV2 as AerEstimator
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
 
 # Suppress Qiskit Machine Learning logging warnings about gradients
@@ -56,10 +58,9 @@ class HybridEvaluator(Evaluator):
         self.loss_fn = nn.MSELoss()
         
         # Qiskit Aer Estimator for faster simulation
-        self.estimator = AerEstimator(run_options={"shots": None, "approximation": True})
-        # เตรียม Gradient method
+        self.estimator = AerEstimator()
         self.grad_method = ParamShiftEstimatorGradient(self.estimator)
-    
+        
     def _create_feature_map(self, n_qubits=16):
         # สร้างวงจร Encode ข้อมูล ด้วย Angle Encoding
         fm = QuantumCircuit(n_qubits)
@@ -92,10 +93,8 @@ class HybridEvaluator(Evaluator):
         observable = self._crate_observable(last_qubit, self.builder.n_qubits)
 
         # 3. รวม feature map กับ QCNN
-        full_circuit = QuantumCircuit(self.builder.n_qubits)
-        full_circuit.append(fm, range(self.builder.n_qubits))
-        full_circuit.append(qc, range(self.builder.n_qubits))
-
+        full_circuit = fm.compose(qc)
+        
         # 4. define QNN
         qnn = EstimatorQNN(
             circuit=full_circuit,
@@ -103,7 +102,6 @@ class HybridEvaluator(Evaluator):
             weight_params=list(qc.parameters),
             observables=observable,
             estimator=self.estimator, # ใช้ Aer Estimator เร็วกว่า
-            gradient=self.grad_method, # เปิดใช้ Gradient
             input_gradients=True
         )    
         
@@ -119,8 +117,9 @@ class HybridEvaluator(Evaluator):
             loss.backward()
             optimizer.step()
             if self.verbose:
-                print(f"    Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f}")
-
+                # print(f"    Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f}")
+                pass
+            
         # 6. Test Accuracy
         model.eval()
         with torch.no_grad():
