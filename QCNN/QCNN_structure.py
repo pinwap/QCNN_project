@@ -11,7 +11,7 @@ class GateFactory:
         qc: QuantumCircuit,
         gene: int,
         qubit: int,
-        param: Union[float, ParameterExpression],
+        param,
         inverse: bool = False,
     ) -> None:
         """
@@ -35,7 +35,7 @@ class GateFactory:
         gene: int,
         q1: int,
         q2: int,
-        param: Union[float, ParameterExpression],
+        param,
     ) -> None:
         """
         เติม Two Qubit Gate ลงในวงจร
