@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from torchvision import datasets, transforms
+
 import torch
+from torchvision import datasets, transforms
+
 
 # 1. สร้าง Abstract Base Class
 class BaseDataManager(ABC):
@@ -9,23 +11,28 @@ class BaseDataManager(ABC):
         """ทุก DataManager ต้องมีฟังก์ชันนี้"""
         pass
 
+
 # 2. สร้าง MNIST Manager ที่สืบทอดมาจาก Abstract Base Class
 class MNISTDataManager(BaseDataManager):
-    def __init__(self, data_path='../data', n_train=400, n_test=100):
+    def __init__(self, data_path="../data", n_train=400, n_test=100):
         self.data_path = data_path
         self.n_train = n_train
         self.n_test = n_test
 
     def get_data(self):
         # 1. Transform ขั้นตอนการแปลงข้อมูล
-        transform = transforms.Compose([
-            transforms.Resize((4, 4)),
-            transforms.ToTensor(),
-        ])
-        
+        transform = transforms.Compose(
+            [
+                transforms.Resize((4, 4)),
+                transforms.ToTensor(),
+            ]
+        )
+
         # 2. Load MNIST Dataset
         try:
-            dataset = datasets.MNIST(root=self.data_path, train=True, download=True, transform=transform)
+            dataset = datasets.MNIST(
+                root=self.data_path, train=True, download=True, transform=transform
+            )
         except Exception as e:
             print(f"Error loading MNIST: {e}")
             return None, None, None, None
@@ -41,12 +48,15 @@ class MNISTDataManager(BaseDataManager):
 
         # 5. Preprocessing (Resize & Normalize)
         data = dataset.data.float().unsqueeze(1) / 255.0
-        data = torch.nn.functional.interpolate(data, size=(4, 4), mode='bilinear')
+        data = torch.nn.functional.interpolate(data, size=(4, 4), mode="bilinear")
         data = data.view(-1, 16)
 
         # 6. Split
-        x_train, y_train = data[:self.n_train], new_targets[:self.n_train]
-        x_test, y_test = data[self.n_train:self.n_train + self.n_test], new_targets[self.n_train:self.n_train + self.n_test]
+        x_train, y_train = data[: self.n_train], new_targets[: self.n_train]
+        x_test, y_test = (
+            data[self.n_train : self.n_train + self.n_test],
+            new_targets[self.n_train : self.n_train + self.n_test],
+        )
 
         print(f"✅ Data Ready: Train {x_train.shape}, Test {x_test.shape}")
         return x_train, y_train, x_test, y_test

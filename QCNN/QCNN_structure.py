@@ -1,7 +1,6 @@
-import numpy as np
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.circuit import ParameterVector
-from qiskit.circuit.library import RXGate, RYGate, RZGate, RXXGate, RYYGate, RZZGate
+
 
 class GateFactory:
     # สร้างเกตต่างๆ ที่ใช้ใน QCNN
@@ -36,8 +35,9 @@ class GateFactory:
             qc.rzz(param, q1, q2)
         # Gene 3 = Identity
 
+
 class BlockFactory:
-    # Conv Block (5 gates) และ Pool Block (2 gates)   
+    # Conv Block (5 gates) และ Pool Block (2 gates)
     def __init__(self):
         self.factory = GateFactory()
 
@@ -50,105 +50,108 @@ class BlockFactory:
         params: list ของ Parameter 5 ตัว
         """
         q_a, q_b = q_pair
-        
+
         # Structure: G1(a) -> G2(b) -> GG(a,b) -> G3(a) -> G4(b)
         self.factory.append_single_gate(qc, genes[0], q_a, params[0])
         self.factory.append_single_gate(qc, genes[1], q_b, params[1])
-        self.factory.append_two_gate(   qc, genes[2], q_a, q_b, params[2])
+        self.factory.append_two_gate(qc, genes[2], q_a, q_b, params[2])
         self.factory.append_single_gate(qc, genes[3], q_a, params[3])
         self.factory.append_single_gate(qc, genes[4], q_b, params[4])
-    
+
     def add_pool_block(self, qc, q_pair, genes, params):
         """
         สร้าง Pooling Block 1 ชิ้น (ใช้ 2 Genes) ลงในวงจร
         q_pair: (source, sink)
         """
         q_src, q_sink = q_pair
-        
+
         # Structure: G1(src) -> G2(sink) -> CNOT -> G2_inverse(sink)
         self.factory.append_single_gate(qc, genes[0], q_src, params[0])
         self.factory.append_single_gate(qc, genes[1], q_sink, params[1])
         qc.cx(q_src, q_sink)
         self.factory.append_single_gate(qc, genes[1], q_sink, params[1], inverse=True)
-        
+
+
 class QCNNBuilder:
     # รับรหัสโครโมโซมมาสร้างเป็น QCNN < block
     def __init__(self, n_qubits):
         self.n_qubits = n_qubits
         self.blocks = BlockFactory()
-        
-        self.total_genes = 0 # เพื่อเรียกดูจำนวน gene ที่ใช้ไป
-    
+
+        self.total_genes = 0  # เพื่อเรียกดูจำนวน gene ที่ใช้ไป
+
     def assemble(self, chromosome):
         """
         สร้างวงจร Qiskit จากรหัสโครโมโซม
         """
         # 1. เตรียมวงจรและ ParameterVector
-        qr = QuantumRegister(self.n_qubits, 'q') #กล่อง array เก็บ qubit ขนาด self.n_qubits ชื่อ 'q'
+        qr = QuantumRegister(self.n_qubits, "q")  # กล่อง array เก็บ qubit ขนาด self.n_qubits ชื่อ 'q'
         qc = QuantumCircuit(qr)
-        
+
         # 2. สร้าง ParameterVector สำหรับเก็้บมุมพารามิเตอร์ ขนาดเท่าจำนวน gene
-        theta = ParameterVector('theta', len(chromosome)) #จะสร้างตัวแปรชื่อ theta[0], theta[1], ... theta[len(chromosome)-1] ให้เราอัตโนมัติ
-        
+        theta = ParameterVector(
+            "theta", len(chromosome)
+        )  # จะสร้างตัวแปรชื่อ theta[0], theta[1], ... theta[len(chromosome)-1] ให้เราอัตโนมัติ
+
         gene_iter = iter(chromosome)
-        param_idx = 0 # ตัวนับตำแหน่งพารามิเตอร์
-        
-        active_qubits = list(range(self.n_qubits)) # เก็บ Index ของ Qubit ที่ยังรอดอยู่
-        
+        param_idx = 0  # ตัวนับตำแหน่งพารามิเตอร์
+
+        active_qubits = list(range(self.n_qubits))  # เก็บ Index ของ Qubit ที่ยังรอดอยู่
+
         # วนลูปสร้าง Layer จนกว่าจะเหลือ Qubit น้อยกว่า 2
         layer_count = 1
 
         while len(active_qubits) > 1:
             n = len(active_qubits)
-            
+
             # --- สร้าง Barrier เพื่อความสวยงามในภาพวาด ---
             qc.barrier()
-            
+
             # ==========================
             # 1. Convolution Layer
             # ==========================
             for i in range(n):
                 q_a = active_qubits[i]
-                q_b = active_qubits[(i + 1) % n] # Circular
-                
+                q_b = active_qubits[(i + 1) % n]  # Circular
+
                 # เบิก 5 Genes และ 5 Parameters
                 block_genes = [next(gene_iter) for _ in range(5)]
-                block_params = theta[param_idx : param_idx+5]
+                block_params = theta[param_idx : param_idx + 5]
                 param_idx += 5
-                
+
                 # ต่อ Block
                 self.blocks.add_conv_block(qc, (q_a, q_b), block_genes, block_params)
             # จบ ได้convolution 1 layer
-            
+
             # ==========================
             # 2. Pooling Layer
             # ==========================
-            next_active_qubits = [] # เก็บ Qubit ที่รอดหลัง Pooling
+            next_active_qubits = []  # เก็บ Qubit ที่รอดหลัง Pooling
             qc.barrier()
-            
+
             for i in range(0, n, 2):
                 # กรณีเหลือเศษ (Odd Logic)
                 if i + 1 >= n:
-                    next_active_qubits.append(active_qubits[i]) # ตัวสุดท้ายได้ผ่านไปเฉยๆ
+                    next_active_qubits.append(active_qubits[i])  # ตัวสุดท้ายได้ผ่านไปเฉยๆ
                     break
-                
+
                 q_src = active_qubits[i]
-                q_sink = active_qubits[i+1]
-                
+                q_sink = active_qubits[i + 1]
+
                 # เบิก 2 Genes และ 2 Parameters
                 block_genes = [next(gene_iter) for _ in range(2)]
-                block_params = theta[param_idx : param_idx+2]
+                block_params = theta[param_idx : param_idx + 2]
                 param_idx += 2
-                
+
                 # ต่อ Block
                 self.blocks.add_pool_block(qc, (q_src, q_sink), block_genes, block_params)
                 # จบ ได้convolution 1 layer
-                
+
                 # เก็บตัวรอด
                 next_active_qubits.append(q_sink)
-            
+
             active_qubits = next_active_qubits
             layer_count += 1
-            
+
         self.total_genes = param_idx
-        return qc, active_qubits[0] # คืน Qubit สุดท้ายที่รอด
+        return qc, active_qubits[0]  # คืน Qubit สุดท้ายที่รอด
