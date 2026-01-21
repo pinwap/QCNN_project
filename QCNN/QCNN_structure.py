@@ -71,7 +71,6 @@ class BlockFactory:
         """
         q_a, q_b = q_pair
         params_list = list(params)
-
         # Structure: G1(a) -> G2(b) -> GG(a,b) -> G3(a) -> G4(b)
         self.factory.append_single_gate(qc, genes[0], q_a, params_list[0])
         self.factory.append_single_gate(qc, genes[1], q_b, params_list[1])
@@ -92,7 +91,6 @@ class BlockFactory:
         """
         q_src, q_sink = q_pair
         params_list = list(params)
-
         # Structure: G1(src) -> G2(sink) -> CNOT -> G2_inverse(sink)
         self.factory.append_single_gate(qc, genes[0], q_src, params_list[0])
         self.factory.append_single_gate(qc, genes[1], q_sink, params_list[1])
