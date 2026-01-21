@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -89,6 +90,23 @@ class Experiment:
         self.global_best = None
         self.history = []
 
+    def _apply_crossover(self):
+        print("Triggering Crossover")
+        n_pop = len(self.population)
+        n_genes = len(self.population[0].genes)
+        
+        # สร้าง population ใหม่ มารอรับค่า
+        new_population = [p.copy() for p in self.population]    
+        
+        for i in range(n_pop):
+            for j in range(n_genes):
+                # สูตรตาม Table 2: ตัวที่ i รับยีนตำแหน่ง j มาจากตัวที่ (i+j)%N
+                source_idx = (i + j) % n_pop
+                # ก๊อปปี้ gene มาใส่ (ต้องระวังเรื่อง pass by reference)
+                new_population[i].genes[j] = copy.deepcopy(self.population[source_idx].genes[j])
+        
+        self.population = new_population   
+    
     def run(self):
         # 1. Prepair Data
         x_train, y_train, x_test, y_test = self.data_mgr.get_data()
@@ -97,6 +115,8 @@ class Experiment:
             return None, []
         
         print(f"\n🚀 Start Experiment: {self.n_gen} Generations x {len(self.population)} Pop")
+        
+        stagnation_counter = 0
         
         for gen in range(self.n_gen):
             print(f"\n--- Generation {gen+1} ---")
@@ -115,12 +135,20 @@ class Experiment:
             current_best = max(self.population, key=lambda x: x.fitness)
             if self.global_best is None or current_best.fitness > self.global_best.fitness:
                 self.global_best = current_best.copy()
+                stagnation_counter = 0 #รีเซ็ตนับใหม่ เพราะคะแนนขยับ
                 print(f"  🏆 New Global Best: {self.global_best.fitness:.4f}")
+            else:
+                stagnation_counter += 1 #คะแนนไม่ขยับ
+                print(f" Stagnation: {stagnation_counter}/10")
+        
+            # 4. Evolution (Update Genes)
+            if stagnation_counter >= 10:
+                self._apply_crossover()
+                stagnation_counter = 0 #รีเซ็ตนับใหม่หลังครอสโอเวอร์
+            else:
+                for chromo in self.population:
+                    chromo.update_genes(self.global_best)
             
             self.history.append(self.global_best.fitness)
-
-            # 4. Evolution (Update Genes)
-            for chromo in self.population:
-                chromo.update_genes(self.global_best)
 
         return self.global_best, self.history
