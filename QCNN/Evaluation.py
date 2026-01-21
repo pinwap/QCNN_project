@@ -16,6 +16,8 @@ from qiskit_machine_learning.neural_networks import EstimatorQNN
 from QCNN.DataManager import BaseDataManager
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.QEA_core import QuantumChromosome
+from qiskit_aer.primitives import Estimator as AerEstimator
+from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
 
 # Suppress Qiskit Machine Learning logging warnings about gradients
 logging.getLogger("qiskit_machine_learning").setLevel(logging.ERROR)
@@ -52,8 +54,13 @@ class HybridEvaluator(Evaluator):
         self.lr = lr
         self.verbose = verbose
         self.loss_fn = nn.MSELoss()
-
-    def _create_feature_map(self, n_qubits: int = 16) -> Tuple[QuantumCircuit, ParameterVector]:
+        
+        # Qiskit Aer Estimator for faster simulation
+        self.estimator = AerEstimator(run_options={"shots": None, "approximation": True})
+        # เตรียม Gradient method
+        self.grad_method = ParamShiftEstimatorGradient(self.estimator)
+    
+    def _create_feature_map(self, n_qubits=16):
         # สร้างวงจร Encode ข้อมูล ด้วย Angle Encoding
         fm = QuantumCircuit(n_qubits)
         inputs = ParameterVector("input", n_qubits)
@@ -64,7 +71,8 @@ class HybridEvaluator(Evaluator):
     def _crate_observable(self, last_qubit: int, n_qubits: int = 16) -> SparsePauliOp:
         # สร้างตัววัดค่า Z ที่ Qubit สุดท้าย
         # qiskit เรียง qubit จากขวาไปซ้าย !!!
-        return SparsePauliOp.from_sparse_list([("Z", [last_qubit], 1)], num_qubits=n_qubits)
+        # ("Gate", [ตำแหน่งQubit], สัมประสิทธิ์)
+        return SparsePauliOp.from_sparse_list([("Z", [last_qubit], 1.0)], num_qubits=n_qubits)
 
     def evaluate(
         self,
@@ -94,8 +102,11 @@ class HybridEvaluator(Evaluator):
             input_params=list(input_params),
             weight_params=list(qc.parameters),
             observables=observable,
-        )
-
+            estimator=self.estimator, # ใช้ Aer Estimator เร็วกว่า
+            gradient=self.grad_method, # เปิดใช้ Gradient
+            input_gradients=True
+        )    
+        
         # 5. Train Hybrid(Torch+Qiskit)
         model = TorchConnector(qnn)
         optimizer = optim.Adam(model.parameters(), lr=self.lr)
@@ -115,7 +126,7 @@ class HybridEvaluator(Evaluator):
         with torch.no_grad():
             preds = torch.sign(model(x_test))
             acc = (preds == y_test.unsqueeze(1)).float().mean().item()
-
+            # เอาค่า class -1, 1 มาเปรียบเทียบกับ y_test > true/false > 1.0/0.0 > mean()ทุกตัว > .item() ดึงค่าออกจาก tensor
         return acc
 
 
