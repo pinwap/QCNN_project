@@ -45,6 +45,7 @@ class HybridEvaluator(Evaluator):
         epochs: int = 5,
         lr: float = 0.01,
         verbose: bool = True,
+        device: Optional[str] = None,
     ):
         """
         builder: QCNNBuilder
@@ -57,9 +58,28 @@ class HybridEvaluator(Evaluator):
         self.verbose = verbose
         self.loss_fn = nn.MSELoss()
         
+        if device is None:
+            if torch.cuda.is_available():
+                self.device = torch.device("cuda")
+            elif torch.backends.mps.is_available():
+                self.device = torch.device("mps")
+            else:
+                self.device = torch.device("cpu")
+        else:
+            self.device = torch.device(device)
+        
+        if self.verbose:
+            print(f"Using device: {self.device}")
+
         # Qiskit Aer Estimator for faster simulation
         self.estimator = AerEstimator()
         self.grad_method = ParamShiftEstimatorGradient(self.estimator)
+       
+        if self.device.type == "cuda":
+            self.estimator.options.update(device="GPU")
+            if self.verbose:
+                print("Qiskit Aer Estimator set to use GPU.")
+       
         
     def _create_feature_map(self, n_qubits=16):
         # สร้างวงจร Encode ข้อมูล ด้วย Angle Encoding
@@ -106,14 +126,20 @@ class HybridEvaluator(Evaluator):
         )    
         
         # 5. Train Hybrid(Torch+Qiskit)
-        model = TorchConnector(qnn)
+        model = TorchConnector(qnn).to(self.device)
         optimizer = optim.Adam(model.parameters(), lr=self.lr)
+
+        # move data to device
+        x_train_dev = x_train.to(self.device)
+        y_train_dev = y_train.to(self.device).unsqueeze(1)
+        x_test_dev = x_test.to(self.device)
+        y_test_dev = y_test.to(self.device).unsqueeze(1)
 
         model.train()
         for epoch in range(self.epochs):
             optimizer.zero_grad()
-            output = model(x_train)
-            loss = self.loss_fn(output, y_train.unsqueeze(1))
+            output = model(x_train_dev)
+            loss = self.loss_fn(output, y_train_dev)
             loss.backward()
             optimizer.step()
             if self.verbose:
@@ -123,8 +149,8 @@ class HybridEvaluator(Evaluator):
         # 6. Test Accuracy
         model.eval()
         with torch.no_grad():
-            preds = torch.sign(model(x_test))
-            acc = (preds == y_test.unsqueeze(1)).float().mean().item()
+            preds = torch.sign(model(x_test_dev))
+            acc = (preds == y_test_dev).float().mean().item()
             # เอาค่า class -1, 1 มาเปรียบเทียบกับ y_test > true/false > 1.0/0.0 > mean()ทุกตัว > .item() ดึงค่าออกจาก tensor
         return acc
 
