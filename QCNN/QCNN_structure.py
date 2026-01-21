@@ -66,13 +66,9 @@ class BlockFactory:
         q_src, q_sink = q_pair
         
         # Structure: G1(src) -> G2(sink) -> CNOT -> G2_inverse(sink)
-        # 1. G1 (Source)
         self.factory.append_single_gate(qc, genes[0], q_src, params[0])
-        # 2. G2 (Sink)
         self.factory.append_single_gate(qc, genes[1], q_sink, params[1])
-        # 3. CNOT (Fixed) - ใน Qiskit คือ cx
         qc.cx(q_src, q_sink)
-        # 4. G2 Inverse (Sink) - ใช้ Gene เดิมและ Param เดิม แต่ส่ง flag inverse
         self.factory.append_single_gate(qc, genes[1], q_sink, params[1], inverse=True)
         
 class QCNNBuilder:
@@ -81,8 +77,7 @@ class QCNNBuilder:
         self.n_qubits = n_qubits
         self.blocks = BlockFactory()
         
-        # 
-        self.total_genes = 0
+        self.total_genes = 0 # เพื่อเรียกดูจำนวน gene ที่ใช้ไป
     
     def assemble(self, chromosome):
         """

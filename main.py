@@ -3,27 +3,28 @@ from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.Evaluation import HybridEvaluator, Experiment
 
 def main():
-    print("Hello from qcnn-project!")
-
-if __name__ == "__main__":
-    # 1. Create Components (Dependencies)
-    data = MNISTDataManager(n_train=200, n_test=50) # Small subset for demo
+    # 1. Create Components 
+    data_manager = MNISTDataManager(data_path="../data", n_train=200, n_test=50) # Small subset for demo
     builder = QCNNBuilder(n_qubits=16)
-    evaluator = HybridEvaluator(builder, epochs=5) # 5 Epochs according to paper
+    evaluator = HybridEvaluator(builder, epochs=5, lr=0.01) # 5 Epochs according to paper
     
     # 2. Inject into Experiment
     experiment = Experiment(
-        data_mgr=data,
+        data_mgr=data_manager,
         builder=builder,
         evaluator=evaluator,
-        n_pop=5,   # ลองรันเล็กๆ ก่อน
-        n_gen=3,
+        n_pop=5,   # ลองรัน population เล็กๆ ก่อน
+        n_gen=3,   # ลองรัน 3 รุ่น
         n_gates=180 # 4 Layers approx
     )
     
     # 3. Run
-    best_model, hist = experiment.run()
+    best_model, history = experiment.run()
     
     print("\n🏁 Experiment Finished!")
-    print(f"Final Best Accuracy: {best_model.fitness:.4f}")
-    print(f"History: {hist}")
+    if best_model:
+        print(f"Final Best Accuracy: {best_model.fitness:.4f}")
+        print(f"History: {history}")
+    
+if __name__ == "__main__":
+    main()
