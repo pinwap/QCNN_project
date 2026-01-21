@@ -10,16 +10,14 @@ import torch.optim as optim
 from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
 from qiskit.quantum_info import SparsePauliOp
-
+from qiskit_aer.primitives import EstimatorV2 as AerEstimator
+from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
 from qiskit_machine_learning.connectors import TorchConnector
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
 from QCNN.DataManager import BaseDataManager
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.QEA_core import QuantumChromosome
-
-from qiskit_aer.primitives import EstimatorV2 as AerEstimator
-from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
 
 # Suppress Qiskit Machine Learning logging warnings about gradients
 logging.getLogger("qiskit_machine_learning").setLevel(logging.ERROR)
@@ -57,7 +55,7 @@ class HybridEvaluator(Evaluator):
         self.lr = lr
         self.verbose = verbose
         self.loss_fn = nn.MSELoss()
-        
+
         if device is None:
             if torch.cuda.is_available():
                 self.device = torch.device("cuda")
@@ -67,20 +65,20 @@ class HybridEvaluator(Evaluator):
                 self.device = torch.device("cpu")
         else:
             self.device = torch.device(device)
-        
+
         if self.verbose:
             print(f"Using device: {self.device}")
 
         # Qiskit Aer Estimator for faster simulation
         self.estimator = AerEstimator()
         self.grad_method = ParamShiftEstimatorGradient(self.estimator)
-       
+
         if self.device.type == "cuda":
-            self.estimator.options.update(device="GPU")
+            # Use assignment instead of update() for Options object in Qiskit Aer V2
+            self.estimator.options.device = "GPU"
             if self.verbose:
                 print("Qiskit Aer Estimator set to use GPU.")
-       
-        
+
     def _create_feature_map(self, n_qubits=16):
         # สร้างวงจร Encode ข้อมูล ด้วย Angle Encoding
         fm = QuantumCircuit(n_qubits)
@@ -114,17 +112,17 @@ class HybridEvaluator(Evaluator):
 
         # 3. รวม feature map กับ QCNN
         full_circuit = fm.compose(qc)
-        
+
         # 4. define QNN
         qnn = EstimatorQNN(
             circuit=full_circuit,
             input_params=list(input_params),
             weight_params=list(qc.parameters),
             observables=observable,
-            estimator=self.estimator, # ใช้ Aer Estimator เร็วกว่า
-            input_gradients=True
-        )    
-        
+            estimator=self.estimator,  # ใช้ Aer Estimator เร็วกว่า
+            input_gradients=True,
+        )
+
         # 5. Train Hybrid(Torch+Qiskit)
         model = TorchConnector(qnn).to(self.device)
         optimizer = optim.Adam(model.parameters(), lr=self.lr)
@@ -145,7 +143,7 @@ class HybridEvaluator(Evaluator):
             if self.verbose:
                 # print(f"    Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f}")
                 pass
-            
+
         # 6. Test Accuracy
         model.eval()
         with torch.no_grad():
