@@ -1,4 +1,7 @@
 import copy
+import logging
+from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -10,11 +13,35 @@ from qiskit.quantum_info import SparsePauliOp
 from qiskit_machine_learning.connectors import TorchConnector
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
+from QCNN.DataManager import BaseDataManager
+from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.QEA_core import QuantumChromosome
 
+# Suppress Qiskit Machine Learning logging warnings about gradients
+logging.getLogger("qiskit_machine_learning").setLevel(logging.ERROR)
 
-class HybridEvaluator:
-    def __init__(self, builder, epochs=5, lr=0.01):
+
+class Evaluator(ABC):
+    @abstractmethod
+    def evaluate(
+        self,
+        structure_code: List[int],
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_test: torch.Tensor,
+        y_test: torch.Tensor,
+    ) -> float:
+        pass
+
+
+class HybridEvaluator(Evaluator):
+    def __init__(
+        self,
+        builder: QCNNBuilder,
+        epochs: int = 5,
+        lr: float = 0.01,
+        verbose: bool = True,
+    ):
         """
         builder: QCNNBuilder
         epochs: จำนวนรอบการฝึก
@@ -23,9 +50,10 @@ class HybridEvaluator:
         self.builder = builder
         self.epochs = epochs
         self.lr = lr
+        self.verbose = verbose
         self.loss_fn = nn.MSELoss()
 
-    def _create_feature_map(self, n_qubits=16):
+    def _create_feature_map(self, n_qubits: int = 16) -> Tuple[QuantumCircuit, ParameterVector]:
         # สร้างวงจร Encode ข้อมูล ด้วย Angle Encoding
         fm = QuantumCircuit(n_qubits)
         inputs = ParameterVector("input", n_qubits)
@@ -33,12 +61,19 @@ class HybridEvaluator:
             fm.rx(inputs[i] * np.pi, i)
         return fm, inputs
 
-    def _crate_observable(self, last_qubit, n_qubits=16):
+    def _crate_observable(self, last_qubit: int, n_qubits: int = 16) -> SparsePauliOp:
         # สร้างตัววัดค่า Z ที่ Qubit สุดท้าย
         # qiskit เรียง qubit จากขวาไปซ้าย !!!
-        return SparsePauliOp.from_list([("Z", [last_qubit], 1)])
+        return SparsePauliOp.from_sparse_list([("Z", [last_qubit], 1)], num_qubits=n_qubits)
 
-    def evaluate(self, structure_code, x_train, y_train, x_test, y_test):
+    def evaluate(
+        self,
+        structure_code: List[int],
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_test: torch.Tensor,
+        y_test: torch.Tensor,
+    ) -> float:
         # Main Pipeline: Build -> Train -> Test -> Return Accuracy
 
         # 1. สร้างโมเดล QCNN จากโครงสร้าง
@@ -56,8 +91,8 @@ class HybridEvaluator:
         # 4. define QNN
         qnn = EstimatorQNN(
             circuit=full_circuit,
-            input_params=input_params,
-            weight_params=qc.parameters,
+            input_params=list(input_params),
+            weight_params=list(qc.parameters),
             observables=observable,
         )
 
@@ -66,12 +101,14 @@ class HybridEvaluator:
         optimizer = optim.Adam(model.parameters(), lr=self.lr)
 
         model.train()
-        for _ in range(self.epochs):
+        for epoch in range(self.epochs):
             optimizer.zero_grad()
             output = model(x_train)
             loss = self.loss_fn(output, y_train.unsqueeze(1))
             loss.backward()
             optimizer.step()
+            if self.verbose:
+                print(f"    Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f}")
 
         # 6. Test Accuracy
         model.eval()
@@ -83,18 +120,24 @@ class HybridEvaluator:
 
 
 class Experiment:
-    def __init__(self, data_mgr, builder, evaluator, n_pop=10, n_gen=5, n_gates=180):
+    def __init__(
+        self,
+        data_mgr: BaseDataManager,
+        evaluator: Evaluator,
+        n_pop: int = 10,
+        n_gen: int = 5,
+        n_gates: int = 180,
+    ):
         self.data_mgr = data_mgr  # Data Manager
-        self.builder = builder
         self.evaluator = evaluator
         self.n_gen = n_gen  # จำนวนรุ่น
 
         # สร้างจำนวนวงจรเริ่มต้น n_pop ตัวใน 1 รุ่น
         self.population = [QuantumChromosome(n_gates) for _ in range(n_pop)]
-        self.global_best = None
-        self.history = []
+        self.global_best: Optional[QuantumChromosome] = None
+        self.history: List[float] = []
 
-    def _apply_crossover(self):
+    def _apply_crossover(self) -> None:
         print("Triggering Crossover")
         n_pop = len(self.population)
         n_genes = len(self.population[0].genes)
@@ -111,10 +154,10 @@ class Experiment:
 
         self.population = new_population
 
-    def run(self):
+    def run(self) -> Tuple[Optional[QuantumChromosome], List[float]]:
         # 1. Prepair Data
         x_train, y_train, x_test, y_test = self.data_mgr.get_data()
-        if x_train is None:
+        if x_train is None or y_train is None or x_test is None or y_test is None:
             print("Data loading failed. Experiment cannot proceed.")
             return None, []
 
@@ -123,17 +166,18 @@ class Experiment:
         stagnation_counter = 0
 
         for gen in range(self.n_gen):
-            print(f"\n--- Generation {gen + 1} ---")
+            print(f"\n--- Generation {gen + 1}/{self.n_gen} ---")
 
             # 2. Loop Population
             for i, chromo in enumerate(self.population):
+                print(f"  Evaluating Population {i + 1}/{len(self.population)}...")
                 # A. Collapse -> Structure
                 struct_code = chromo.collapse()
 
                 # B. Train - Evaluate 5 Epochs
                 acc = self.evaluator.evaluate(struct_code, x_train, y_train, x_test, y_test)
                 chromo.fitness = acc
-                print(f"  Pop {i + 1}: Acc = {acc:.4f}")
+                print(f"  Pop {i + 1} Result: Acc = {acc:.4f}")
 
             # 3. Find Update Global Best
             current_best = max(self.population, key=lambda x: x.fitness)

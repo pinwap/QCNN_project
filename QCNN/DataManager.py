@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional, Tuple
 
 import torch
 from torchvision import datasets, transforms
@@ -7,19 +8,33 @@ from torchvision import datasets, transforms
 # 1. สร้าง Abstract Base Class
 class BaseDataManager(ABC):
     @abstractmethod
-    def get_data(self):
+    def get_data(
+        self,
+    ) -> Tuple[
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ]:
         """ทุก DataManager ต้องมีฟังก์ชันนี้"""
         pass
 
 
 # 2. สร้าง MNIST Manager ที่สืบทอดมาจาก Abstract Base Class
 class MNISTDataManager(BaseDataManager):
-    def __init__(self, data_path="../data", n_train=400, n_test=100):
+    def __init__(self, data_path: str = "../data", n_train: int = 400, n_test: int = 100):
         self.data_path = data_path
         self.n_train = n_train
         self.n_test = n_test
 
-    def get_data(self):
+    def get_data(
+        self,
+    ) -> Tuple[
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ]:
         # 1. Transform ขั้นตอนการแปลงข้อมูล
         transform = transforms.Compose(
             [
@@ -57,6 +72,8 @@ class MNISTDataManager(BaseDataManager):
             data[self.n_train : self.n_train + self.n_test],
             new_targets[self.n_train : self.n_train + self.n_test],
         )
+
+        return x_train, y_train, x_test, y_test
 
         print(f"✅ Data Ready: Train {x_train.shape}, Test {x_test.shape}")
         return x_train, y_train, x_test, y_test

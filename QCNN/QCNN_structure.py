@@ -1,11 +1,19 @@
+from typing import Iterable, List, Tuple, Union
+
 from qiskit import QuantumCircuit, QuantumRegister
-from qiskit.circuit import ParameterVector
+from qiskit.circuit import ParameterExpression, ParameterVector
 
 
 class GateFactory:
     # สร้างเกตต่างๆ ที่ใช้ใน QCNN
     @staticmethod
-    def append_single_gate(qc, gene, qubit, param, inverse=False):
+    def append_single_gate(
+        qc: QuantumCircuit,
+        gene: int,
+        qubit: int,
+        param: Union[float, ParameterExpression],
+        inverse: bool = False,
+    ) -> None:
         """
         เติม Single Gate ลงในวงจร
         Gene: 0->Rx, 1->Ry, 2->Rz, 3->Identity
@@ -22,7 +30,13 @@ class GateFactory:
         # Gene 3 = Identity (Do nothing)
 
     @staticmethod
-    def append_two_gate(qc, gene, q1, q2, param):
+    def append_two_gate(
+        qc: QuantumCircuit,
+        gene: int,
+        q1: int,
+        q2: int,
+        param: Union[float, ParameterExpression],
+    ) -> None:
         """
         เติม Two Qubit Gate ลงในวงจร
         Gene: 0->RXX, 1->RYY, 2->RZZ, 3->Identity
@@ -38,10 +52,16 @@ class GateFactory:
 
 class BlockFactory:
     # Conv Block (5 gates) และ Pool Block (2 gates)
-    def __init__(self):
+    def __init__(self) -> None:
         self.factory = GateFactory()
 
-    def add_conv_block(self, qc, q_pair, genes, params):
+    def add_conv_block(
+        self,
+        qc: QuantumCircuit,
+        q_pair: Tuple[int, int],
+        genes: List[int],
+        params: Iterable[ParameterExpression],
+    ) -> None:
         """
         สร้าง Convolution Block 1 ชิ้น (ใช้ 5 Genes) ลงในวงจร
         qc: QuantumCircuit หลัก
@@ -50,37 +70,45 @@ class BlockFactory:
         params: list ของ Parameter 5 ตัว
         """
         q_a, q_b = q_pair
+        params_list = list(params)
 
         # Structure: G1(a) -> G2(b) -> GG(a,b) -> G3(a) -> G4(b)
-        self.factory.append_single_gate(qc, genes[0], q_a, params[0])
-        self.factory.append_single_gate(qc, genes[1], q_b, params[1])
-        self.factory.append_two_gate(qc, genes[2], q_a, q_b, params[2])
-        self.factory.append_single_gate(qc, genes[3], q_a, params[3])
-        self.factory.append_single_gate(qc, genes[4], q_b, params[4])
+        self.factory.append_single_gate(qc, genes[0], q_a, params_list[0])
+        self.factory.append_single_gate(qc, genes[1], q_b, params_list[1])
+        self.factory.append_two_gate(qc, genes[2], q_a, q_b, params_list[2])
+        self.factory.append_single_gate(qc, genes[3], q_a, params_list[3])
+        self.factory.append_single_gate(qc, genes[4], q_b, params_list[4])
 
-    def add_pool_block(self, qc, q_pair, genes, params):
+    def add_pool_block(
+        self,
+        qc: QuantumCircuit,
+        q_pair: Tuple[int, int],
+        genes: List[int],
+        params: Iterable[ParameterExpression],
+    ) -> None:
         """
         สร้าง Pooling Block 1 ชิ้น (ใช้ 2 Genes) ลงในวงจร
         q_pair: (source, sink)
         """
         q_src, q_sink = q_pair
+        params_list = list(params)
 
         # Structure: G1(src) -> G2(sink) -> CNOT -> G2_inverse(sink)
-        self.factory.append_single_gate(qc, genes[0], q_src, params[0])
-        self.factory.append_single_gate(qc, genes[1], q_sink, params[1])
+        self.factory.append_single_gate(qc, genes[0], q_src, params_list[0])
+        self.factory.append_single_gate(qc, genes[1], q_sink, params_list[1])
         qc.cx(q_src, q_sink)
-        self.factory.append_single_gate(qc, genes[1], q_sink, params[1], inverse=True)
+        self.factory.append_single_gate(qc, genes[1], q_sink, params_list[1], inverse=True)
 
 
 class QCNNBuilder:
     # รับรหัสโครโมโซมมาสร้างเป็น QCNN < block
-    def __init__(self, n_qubits):
+    def __init__(self, n_qubits: int) -> None:
         self.n_qubits = n_qubits
         self.blocks = BlockFactory()
 
-        self.total_genes = 0  # เพื่อเรียกดูจำนวน gene ที่ใช้ไป
+        self.total_genes: int = 0  # เพื่อเรียกดูจำนวน gene ที่ใช้ไป
 
-    def assemble(self, chromosome):
+    def assemble(self, chromosome: List[int]) -> Tuple[QuantumCircuit, int]:
         """
         สร้างวงจร Qiskit จากรหัสโครโมโซม
         """

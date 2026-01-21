@@ -14,7 +14,6 @@ def main():
     # 2. Inject into Experiment
     experiment = Experiment(
         data_mgr=data_manager,
-        builder=builder,
         evaluator=evaluator,
         n_pop=5,  # ลองรัน population เล็กๆ ก่อน
         n_gen=3,  # ลองรัน 3 รุ่น
