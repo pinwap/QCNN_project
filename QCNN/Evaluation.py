@@ -22,6 +22,8 @@ from QCNN.QEA_core import QuantumChromosome
 # Suppress Qiskit Machine Learning logging warnings about gradients
 logging.getLogger("qiskit_machine_learning").setLevel(logging.ERROR)
 
+logger = logging.getLogger(__name__)
+
 
 class Evaluator(ABC):
     @abstractmethod
@@ -67,7 +69,7 @@ class HybridEvaluator(Evaluator):
             self.device = torch.device(device)
 
         if self.verbose:
-            print(f"Using device: {self.device}")
+            logger.info(f"Using device: {self.device}")
 
         # Qiskit Aer Estimator for faster simulation
         self.estimator = AerEstimator()
@@ -77,7 +79,7 @@ class HybridEvaluator(Evaluator):
             # Use assignment instead of update() for Options object in Qiskit Aer V2
             self.estimator.options.device = "GPU"
             if self.verbose:
-                print("Qiskit Aer Estimator set to use GPU.")
+                logger.info("Qiskit Aer Estimator set to use GPU.")
 
     def _create_feature_map(self, n_qubits=16):
         # สร้างวงจร Encode ข้อมูล ด้วย Angle Encoding
@@ -102,6 +104,8 @@ class HybridEvaluator(Evaluator):
         y_test: torch.Tensor,
     ) -> float:
         # Main Pipeline: Build -> Train -> Test -> Return Accuracy
+        if self.verbose:
+            logger.debug("Starting evaluation for a structure code...")
 
         # 1. สร้างโมเดล QCNN จากโครงสร้าง
         qc, last_qubit = self.builder.assemble(structure_code)
@@ -141,8 +145,7 @@ class HybridEvaluator(Evaluator):
             loss.backward()
             optimizer.step()
             if self.verbose:
-                # print(f"    Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f}")
-                pass
+                logger.debug(f"    Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f}")
 
         # 6. Test Accuracy
         model.eval()
@@ -172,7 +175,7 @@ class Experiment:
         self.history: List[float] = []
 
     def _apply_crossover(self) -> None:
-        print("Triggering Crossover")
+        logger.info("Triggering Crossover")
         n_pop = len(self.population)
         n_genes = len(self.population[0].genes)
 
@@ -192,36 +195,36 @@ class Experiment:
         # 1. Prepair Data
         x_train, y_train, x_test, y_test = self.data_mgr.get_data()
         if x_train is None or y_train is None or x_test is None or y_test is None:
-            print("Data loading failed. Experiment cannot proceed.")
+            logger.error("Data loading failed. Experiment cannot proceed.")
             return None, []
 
-        print(f"\n🚀 Start Experiment: {self.n_gen} Generations x {len(self.population)} Pop")
+        logger.info(f"Start Experiment: {self.n_gen} Generations x {len(self.population)} Pop")
 
         stagnation_counter = 0
 
         for gen in range(self.n_gen):
-            print(f"\n--- Generation {gen + 1}/{self.n_gen} ---")
+            logger.info(f"--- Generation {gen + 1}/{self.n_gen} ---")
 
             # 2. Loop Population
             for i, chromo in enumerate(self.population):
-                print(f"  Evaluating Population {i + 1}/{len(self.population)}...")
+                logger.info(f"  Evaluating Population {i + 1}/{len(self.population)}...")
                 # A. Collapse -> Structure
                 struct_code = chromo.collapse()
 
                 # B. Train - Evaluate 5 Epochs
                 acc = self.evaluator.evaluate(struct_code, x_train, y_train, x_test, y_test)
                 chromo.fitness = acc
-                print(f"  Pop {i + 1} Result: Acc = {acc:.4f}")
+                logger.info(f"  Pop {i + 1} Result: Acc = {acc:.4f}")
 
             # 3. Find Update Global Best
             current_best = max(self.population, key=lambda x: x.fitness)
             if self.global_best is None or current_best.fitness > self.global_best.fitness:
                 self.global_best = current_best.copy()
                 stagnation_counter = 0  # รีเซ็ตนับใหม่ เพราะคะแนนขยับ
-                print(f"  🏆 New Global Best: {self.global_best.fitness:.4f}")
+                logger.info(f"  New Global Best: {self.global_best.fitness:.4f}")
             else:
                 stagnation_counter += 1  # คะแนนไม่ขยับ
-                print(f" Stagnation: {stagnation_counter}/10")
+                logger.info(f" Stagnation: {stagnation_counter}/10")
 
             # 4. Evolution (Update Genes)
             if stagnation_counter >= 10:

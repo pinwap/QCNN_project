@@ -8,6 +8,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import datetime
+import logging
 
 import matplotlib.pyplot as plt
 
@@ -15,9 +16,22 @@ from QCNN.DataManager import MNISTDataManager
 from QCNN.Evaluation import Experiment, HybridEvaluator
 from QCNN.QCNN_structure import QCNNBuilder
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("qcnn_experiment.log"),
+        logging.StreamHandler(),
+    ],
+)
+logger = logging.getLogger(__name__)
+
 
 def main():
+    logger.info("Starting QCNN Application")
     # 1. Create Components
+    logger.info("Initializing components...")
     data_manager = MNISTDataManager(
         data_path="../data", n_train=200, n_test=50
     )  # Small subset for demo
@@ -25,6 +39,7 @@ def main():
     evaluator = HybridEvaluator(builder, epochs=5, lr=0.01)  # 5 Epochs according to paper
 
     # 2. Inject into Experiment
+    logger.info("Setting up experiment...")
     experiment = Experiment(
         data_mgr=data_manager,
         evaluator=evaluator,
@@ -34,16 +49,18 @@ def main():
     )
 
     # 3. Run
+    logger.info("Running experiment...")
     best_model, history = experiment.run()
 
-    print("\n🏁 Experiment Finished!")
+    logger.info("Experiment Finished!")
     if best_model:
-        print(f"Final Best Accuracy: {best_model.fitness:.4f}")
-        print(f"History: {history}")
+        logger.info(f"Final Best Accuracy: {best_model.fitness:.4f}")
+        logger.info(f"History: {history}")
 
         # --- 💾 ส่วนที่เพิ่ม: Save ผลลัพธ์ลง Drive ---
         # สร้างชื่อไฟล์ตามเวลา (จะได้ไม่ทับของเก่าเวลารันหลายรอบ)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        logger.info(f"Saving results with timestamp: {timestamp}")
 
         # 1. วาดกราฟและบันทึกเป็นรูปภาพ (.png)
         plt.figure(figsize=(10, 6))
