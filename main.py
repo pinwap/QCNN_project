@@ -36,7 +36,8 @@ def main():
         plt.xlabel('Generation')
         plt.ylabel('Best Accuracy')
         plt.grid(True)
-        plt.show()
+        # save plot
+        plt.savefig('qcnn_experiment_history.png')
     else:
         print("\nExperiment Failed (Data or Execution Error)")
     
