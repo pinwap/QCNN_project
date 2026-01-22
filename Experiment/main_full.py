@@ -7,14 +7,16 @@ from QCNN.DataManager import MNISTDataManager
 from QCNN.Evaluation import Experiment, HybridEvaluator
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.Evaluation import HybridEvaluator, Experiment
-from QCNN.utils import graph_history, setup_logging
+from QCNN.utils import graph_history, initialize_output_dir, save_model
 import logging
 
 logger = logging.getLogger(__name__)
-setup_logging(filename='main_full')
 
 
 def main():
+    # 0. Initialize Output Directory & Logging
+    save_dir, file_id = initialize_output_dir(script_name="main_full")
+
     # 1. Create Components
     data_manager = MNISTDataManager(
         data_path="../data", n_train=200, n_test=100
@@ -38,10 +40,14 @@ def main():
     if best_model:
         logger.info(f"Final Best Accuracy: {best_model.fitness:.4f}")
         logger.info(f"History: {history}")
-        graph_history(best_model, history)
+
+        # Save Results
+        graph_history(best_model, history, save_dir=save_dir, file_id=file_id)
+        save_model(best_model, save_dir=save_dir, file_id=file_id)
 
     else:
         logger.info("\nExperiment Failed (Data or Execution Error)")
+
 
 if __name__ == "__main__":
     main()
