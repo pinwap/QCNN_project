@@ -24,15 +24,15 @@ def main():
     )  # Small subset for demo
     builder = QCNNBuilder(n_qubits=16)
     evaluator = HybridEvaluator(
-        builder, epochs=5, lr=0.01, verbose=True
+        builder, epochs=1, lr=0.01, verbose=True
     )  # 5 Epochs according to paper
 
     # 2. Inject into Experiment
     experiment = Experiment(
         data_mgr=data_manager,
         evaluator=evaluator,
-        n_pop=5,  # ลองรัน population เล็กๆ ก่อน
-        n_gen=3,  # ลองรัน 3 รุ่น
+        n_pop=1,  # ลองรัน population เล็กๆ ก่อน
+        n_gen=2,  # ลองรัน 3 รุ่น
         n_gates=180,  # 4 Layers approx
     )
 
@@ -45,7 +45,9 @@ def main():
         logger.info(f"History: {history}")
 
         # Save Results
-        graph_history(best_model, history, experiment, save_dir=save_dir, file_id=file_id)
+        graph_history(
+            best_model, history, experiment=experiment, save_dir=save_dir, file_id=file_id
+        )
         save_model(best_model, save_dir=save_dir, file_id=file_id)
 
     else:

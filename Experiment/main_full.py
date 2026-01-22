@@ -42,7 +42,9 @@ def main():
         logger.info(f"History: {history}")
 
         # Save Results
-        graph_history(best_model, history, save_dir=save_dir, file_id=file_id)
+        graph_history(
+            best_model, history, experiment=experiment, save_dir=save_dir, file_id=file_id
+        )
         save_model(best_model, save_dir=save_dir, file_id=file_id)
 
     else:

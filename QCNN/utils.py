@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import json
 from matplotlib import pyplot as plt
 import torch
 
@@ -72,11 +73,11 @@ def setup_logging(level=logging.INFO, log_dir="logs", filename="main"):
 
 def graph_history(best_model, history: dict, experiment=None, save_dir=None, file_id=None):
     """
-    Plots training history and saves raw data.
+    Plots training history and saves raw data + configuration as JSON.
     Args:
         best_model: The best chromosome/model from training.
         history (dict/list): Training history data.
-        experiment: Experiment object (optional) for title info.
+        experiment: Experiment object (optional) for title info and detailed config.
         save_dir (str): Directory to save plots.
         file_id (str): Timestamped identifier for filenames.
     """
@@ -95,11 +96,13 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
     # 1. Create and save plot as PNG
     plt.figure(figsize=(10, 6))
 
+    experiment_info = ""
     if experiment:
-        plt.suptitle(
+        experiment_info = (
             f"Population: {len(experiment.population)}, Generations: {experiment.n_gen}, "
             f"Gates: {best_model.num_gates}"
         )
+        plt.suptitle(experiment_info)
     else:
         plt.suptitle("QEA-QCNN Training History")
 
@@ -114,11 +117,69 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
     print(f"✅ Graph saved to: {graph_filename}")
     plt.close()
 
-    # 2. Save raw history data
+    # 2. Save raw history & Config data as JSON
+    data_filename = os.path.join(save_dir, f"{file_id}_data.json")
+
+    output_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "file_id": file_id,
+        "results": {
+            "history": history,
+            "best_fitness": best_model.fitness,
+            "best_structure_code": best_model.structure_code
+            if hasattr(best_model, "structure_code")
+            else None,
+            "num_gates": best_model.num_gates if hasattr(best_model, "num_gates") else None,
+        },
+    }
+
+    # Extract Experiment Configuration if available
+    if experiment:
+        config = {
+            "n_gen": experiment.n_gen,
+            "n_pop": len(experiment.population),
+            "evaluator": {},
+            "data": {},
+        }
+
+        # Evaluator Config
+        if hasattr(experiment, "evaluator"):
+            ev = experiment.evaluator
+            if hasattr(ev, "epochs"):
+                config["evaluator"]["epochs"] = ev.epochs
+            if hasattr(ev, "lr"):
+                config["evaluator"]["lr"] = ev.lr
+            if hasattr(ev, "device"):
+                config["evaluator"]["device"] = str(ev.device)
+            # Add builder info if possible
+            if hasattr(ev, "builder"):
+                config["evaluator"]["n_qubits"] = ev.builder.n_qubits
+
+        # Data Manager Config
+        if hasattr(experiment, "data_mgr"):
+            dm = experiment.data_mgr
+            if hasattr(dm, "n_train"):
+                config["data"]["n_train"] = dm.n_train
+            if hasattr(dm, "n_test"):
+                config["data"]["n_test"] = dm.n_test
+            if hasattr(dm, "data_path"):
+                config["data"]["data_path"] = dm.data_path
+
+        output_data["configuration"] = config
+
+    with open(data_filename, "w") as f:
+        json.dump(output_data, f, indent=4)
+
+    print(f"✅ Experiment Data saved to: {data_filename}")
+
+    # Legacy: Keep history text for backward compatibility if needed, or remove.
+    # Plan says: "Switching from history_{timestamp}.txt ... to experiment_data.json"
+    # But user said "save all the information as much as possible".
+    # I'll keep the history txt just in case scripts rely on it, but put it in plots as before.
     history_filename = os.path.join(plots_dir, f"{file_id}_history.txt")
     with open(history_filename, "w") as f:
         f.write(str(history))
-    print(f"✅ History data saved to: {history_filename}")
+    print(f"✅ History text saved to: {history_filename}")
 
 
 def graph_loss(history: dict, save_dir=None, file_id=None):
