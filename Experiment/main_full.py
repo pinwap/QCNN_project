@@ -1,13 +1,18 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from QCNN.DataManager import MNISTDataManager
 from QCNN.Evaluation import Experiment, HybridEvaluator
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.Evaluation import HybridEvaluator, Experiment
-from QCNN.utils import graph_history
+from QCNN.utils import graph_history, setup_logging
+import logging
+
+logger = logging.getLogger(__name__)
+setup_logging()
+
 
 def main():
     # 1. Create Components
@@ -34,9 +39,10 @@ def main():
         print(f"Final Best Accuracy: {best_model.fitness:.4f}")
         print(f"History: {history}")
         graph_history(best_model, history)
-        
+
     else:
         print("\nExperiment Failed (Data or Execution Error)")
-    
+
+
 if __name__ == "__main__":
     main()
