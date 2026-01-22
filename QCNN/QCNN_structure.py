@@ -1,7 +1,10 @@
 from typing import Iterable, List, Tuple, Union
+import logging
 
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.circuit import ParameterExpression, ParameterVector
+
+logger = logging.getLogger(__name__)
 
 
 class GateFactory:
@@ -119,6 +122,8 @@ class QCNNBuilder:
             "theta", len(chromosome)
         )  # จะสร้างตัวแปรชื่อ theta[0], theta[1], ... theta[len(chromosome)-1] ให้เราอัตโนมัติ
 
+        logger.debug(f"Assembling circuit with {self.n_qubits} qubits and {len(chromosome)} genes")
+
         gene_iter = iter(chromosome)
         param_idx = 0  # ตัวนับตำแหน่งพารามิเตอร์
 
@@ -180,4 +185,5 @@ class QCNNBuilder:
             layer_count += 1
 
         self.total_genes = param_idx
+        logger.debug(f"Assemble complete. Final active qubit: {active_qubits[0]}, Total genes used: {self.total_genes}")
         return qc, active_qubits[0]  # คืน Qubit สุดท้ายที่รอด

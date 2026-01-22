@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
+import logging
 
 import torch
 from torchvision import datasets, transforms
 
+logger = logging.getLogger(__name__)
 
 # 1. สร้าง Abstract Base Class
 class BaseDataManager(ABC):
@@ -35,6 +37,7 @@ class MNISTDataManager(BaseDataManager):
         Optional[torch.Tensor],
         Optional[torch.Tensor],
     ]:
+        logger.info(f"Loading MNIST data from {self.data_path}")
         # 1. Transform ขั้นตอนการแปลงข้อมูล
         transform = transforms.Compose(
             [
@@ -49,7 +52,7 @@ class MNISTDataManager(BaseDataManager):
                 root=self.data_path, train=True, download=True, transform=transform
             )
         except Exception as e:
-            print(f"Error loading MNIST: {e}")
+            logger.error(f"Error loading MNIST: {e}")
             return None, None, None, None
 
         # 3. Filter 3 & 6
@@ -73,6 +76,7 @@ class MNISTDataManager(BaseDataManager):
             new_targets[self.n_train : self.n_train + self.n_test],
         )
 
+        logger.info(f"Data loaded successfully. Train size: {x_train.shape[0]}, Test size: {x_test.shape[0]}")
         return x_train, y_train, x_test, y_test
 
         print(f"✅ Data Ready: Train {x_train.shape}, Test {x_test.shape}")
