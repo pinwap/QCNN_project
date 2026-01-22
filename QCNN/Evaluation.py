@@ -140,6 +140,7 @@ class HybridEvaluator(Evaluator):
 
         model.train()
         for epoch in range(self.epochs):
+            logger.info(f"  Training Epoch {epoch + 1}/{self.epochs}")
             optimizer.zero_grad()
             output = model(x_train_dev)
             loss = self.loss_fn(output, y_train_dev)

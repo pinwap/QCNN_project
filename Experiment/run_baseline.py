@@ -11,11 +11,11 @@ from QCNN.utils import setup_logging
 import logging
 
 logger = logging.getLogger(__name__)
-setup_logging()
+setup_logging(filename = 'run_baseline')
 
 
 def run_baseline():
-    print("\n📉 Running Standard QCNN (Baseline)...")
+    logger.info("\n📉 Running Standard QCNN (Baseline)...")
 
     # 1. Setup
     # ใช้ข้อมูลน้อยหน่อยเพื่อความเร็วในการ Demo (Train 100รูป)
@@ -33,7 +33,7 @@ def run_baseline():
     # สุ่มเลข 0-3 (Rx, Ry, Rz, I)
     fixed_structure = np.random.randint(0, 4, 180).tolist()
 
-    print(f"🔒 Fixed Structure: {fixed_structure[:10]}...")
+    logger.info(f"🔒 Fixed Structure: {fixed_structure[:10]}...")
 
     # 4. Train
     # หมายเหตุ: evaluator.evaluate จะคืนค่า Acc สุดท้ายมา
@@ -41,7 +41,7 @@ def run_baseline():
     # แต่ตอนนี้เอาแค่ Acc สุดท้ายไปบอกอาจารย์ก่อนได้ครับ
     final_acc = evaluator.evaluate(fixed_structure, x_train, y_train, x_test, y_test)
 
-    print(f"✅ Baseline Final Accuracy: {final_acc:.4f}")
+    logger.info(f"✅ Baseline Final Accuracy: {final_acc:.4f}")
 
 
 if __name__ == "__main__":

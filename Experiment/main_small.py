@@ -13,7 +13,7 @@ from QCNN.utils import graph_history, setup_logging
 logger = logging.getLogger(__name__)
 
 # Configure logging
-setup_logging()
+setup_logging(filename = 'main_small')
 
 
 def main():
@@ -39,15 +39,14 @@ def main():
     # 3. Run
     best_model, history = experiment.run()
 
-    print("\n🏁 Experiment Finished!")
+    logger.info("\n🏁 Experiment Finished!")
     if best_model:
-        print(f"Final Best Accuracy: {best_model.fitness:.4f}")
-        print(f"History: {history}")
-        graph_history(best_model, history)
+        logger.info(f"Final Best Accuracy: {best_model.fitness:.4f}")
+        logger.info(f"History: {history}")
+        graph_history(best_model, history, experiment)
 
     else:
-        print("\nExperiment Failed (Data or Execution Error)")
-
+        logger.info("\nExperiment Failed (Data or Execution Error)")
 
 if __name__ == "__main__":
     main()
