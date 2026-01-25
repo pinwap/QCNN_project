@@ -19,7 +19,7 @@ def main():
 
     # 1. Create Components
     data_manager = MNISTDataManager(
-        data_path="../data", n_train=200, n_test=100
+        data_path="../data", n_train=400, n_test=100
     )  # Small subset for demo
     builder = QCNNBuilder(n_qubits=16)
     evaluator = HybridEvaluator(builder, epochs=5, lr=0.01)  # 5 Epochs according to paper
@@ -28,9 +28,9 @@ def main():
     experiment = Experiment(
         data_mgr=data_manager,
         evaluator=evaluator,
-        n_pop=10,  # ลองรัน population เล็กๆ ก่อน
-        n_gen=20,  # ลองรัน 3 รุ่น
-        n_gates=180,  # 4 Layers approx
+        n_pop=50,  
+        n_gen=20,  
+        n_gates=180,  
     )
 
     # 3. Run
