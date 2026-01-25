@@ -17,6 +17,7 @@ class QCNNTrainer:
     def __init__(self, circuit, input_params, weight_params, initial_point_path=None):
         self.circuit = circuit
         self.objective_func_vals = []
+        self.accuracy_history = []
         self.initial_point_path = initial_point_path or "initial_point.json"
         
         # Setup QNN
@@ -33,15 +34,43 @@ class QCNNTrainer:
         )
         
         self.classifier = None
+        self._X_train = None
+        self._y_train = None
     
     def callback_graph(self, weights, obj_func_eval):
         clear_output(wait=True)
         self.objective_func_vals.append(obj_func_eval)
-        plt.title("Objective function value against iteration")
-        plt.xlabel("Iteration")
-        plt.ylabel("Objective function value")
-        plt.plot(range(len(self.objective_func_vals)), self.objective_func_vals)
-        plt.show()
+        
+        # Calculate Accuracy (Manual Forward Pass)
+        if self._X_train is not None and self._y_train is not None:
+            # Forward pass to get expectation values
+            # Output shape: (N_samples, 1)
+            forward_output = self.qnn.forward(self._X_train, weights)
+            
+            # Map expectation values to labels {0, 1}
+            # Assumption: Output > 0 -> Class 0 ("Horizontal" approx |0>)
+            #             Output < 0 -> Class 1 ("Vertical" approx |1>)
+            # NeuralNetworkClassifier default mapping might differ based on first label encountered
+            # We assume standard mapping here for visualization
+            
+            # Note: NeuralNetworkClassifier usually does:
+            # -1 -> Class 0, +1 -> Class 1 OR based on label encoding.
+            # Let's try matching the most likely mapping.
+            # If QNN uses Z operator: |0> -> +1, |1> -> -1.
+            # If Class 0 is Horizontal (Simple), Class 1 is Vertical.
+            # Let's assume +1 -> Class 0, -1 -> Class 1.
+            preds = np.where(forward_output > 0, 0, 1)
+            
+            # If labels are not 0/1, this will fail. Assuming 0/1.
+            accuracy = np.mean(preds.flatten() == self._y_train)
+            self.accuracy_history.append(accuracy)
+            
+        # Optional: Internal Plotting (Can be removed if relying on main script)
+        # plt.title("Objective function value against iteration")
+        # plt.xlabel("Iteration")
+        # plt.ylabel("Objective function value")
+        # plt.plot(range(len(self.objective_func_vals)), self.objective_func_vals)
+        # plt.show()
     
     def load_or_initialize_point(self):
         """ถ้ามีไฟล์ json ให้โหลด ถ้าไม่มีให้สุ่มใหม่"""
@@ -57,10 +86,16 @@ class QCNNTrainer:
     def train(self, X, y, max_iter=200):
         initial_point = self.load_or_initialize_point()
         
+        # Reset histories
+        self.objective_func_vals = []
+        self.accuracy_history = []
+        self._X_train = X
+        self._y_train = y
+        
         self.classifier = NeuralNetworkClassifier(
             self.qnn,
             optimizer=COBYLA(maxiter=max_iter),
-            callback=self._callback_graph,
+            callback=self.callback_graph,
             initial_point=initial_point,
         )
         

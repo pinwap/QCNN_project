@@ -75,7 +75,7 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
     """
     Plots training history and saves raw data + configuration as JSON.
     Args:
-        best_model: The best chromosome/model from training.
+        best_model: The best chromosome/model from training or final score for qiskit.
         history (dict/list): Training history data.
         experiment: Experiment object (optional) for title info and detailed config.
         save_dir (str): Directory to save plots.
@@ -97,19 +97,63 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
     plt.figure(figsize=(10, 6))
 
     experiment_info = ""
-    if experiment:
-        experiment_info = (
-            f"Population: {len(experiment.population)}, Generations: {experiment.n_gen}, "
-            f"Gates: {best_model.num_gates}"
-        )
-        plt.suptitle(experiment_info)
-    else:
-        plt.suptitle("QEA-QCNN Training History")
+    is_qea = experiment and hasattr(experiment, "population")
+    is_qiskit = experiment and hasattr(experiment, "objective_func_vals")
 
-    plt.plot(range(1, len(history) + 1), history, marker="o", linestyle="-", color="b")
-    plt.title(f"QEA-QCNN History (Best Acc: {best_model.fitness:.4f})")
-    plt.xlabel("Generation")
-    plt.ylabel("Accuracy")
+    if is_qiskit:
+        # Plot Loss & Accuracy for Qiskit QCNN
+        plt.suptitle("Qiskit QCNN Training Process")
+        
+        ax1 = plt.gca()
+        ax1.set_xlabel("Iteration")
+        ax1.set_ylabel("Loss", color="r")
+        l1 = ax1.plot(range(1, len(history) + 1), history, marker=".", linestyle="-", color="r", label="Training Loss")
+        ax1.tick_params(axis="y", labelcolor="r")
+        
+        # Check if accuracy history exists
+        if hasattr(experiment, "accuracy_history") and len(experiment.accuracy_history) > 0:
+            ax2 = ax1.twinx()
+            ax2.set_ylabel("Accuracy", color="b")
+            acc_hist = experiment.accuracy_history
+            # Ensure lengths match (sometimes callback might be called one extra time or less)
+            min_len = min(len(history), len(acc_hist))
+            l2 = ax2.plot(range(1, min_len + 1), acc_hist[:min_len], marker=".", linestyle="-", color="b", label="Training Accuracy")
+            ax2.tick_params(axis="y", labelcolor="b")
+            ax2.set_ylim(0, 1.1)
+            
+            # Combined Legend
+            lns = l1 + l2
+            labs = [l.get_label() for l in lns]
+            ax1.legend(lns, labs, loc="center right")
+            
+            plt.title(f"Training History (Final Loss: {history[-1]:.4f}, Final Acc: {acc_hist[-1]:.4f})")
+        else:
+            plt.title(f"Loss History (Final Loss: {history[-1]:.4f})")
+            ax1.legend()
+
+    else:
+        # Plot Accuracy for QEA
+        if experiment and is_qea:
+            experiment_info = (
+                f"Population: {len(experiment.population)}, Generations: {experiment.n_gen}, "
+                f"Gates: {best_model.num_gates}"
+            )
+            plt.suptitle(experiment_info)
+        else:
+            plt.suptitle("Training History")
+
+        plt.plot(range(1, len(history) + 1), history, marker="o", linestyle="-", color="b")
+        
+        if is_qea and hasattr(best_model, "fitness"):
+            plt.title(f"QEA-QCNN History (Best Acc: {best_model.fitness:.4f})")
+        elif isinstance(best_model, (float, int)):
+            plt.title(f"Training History (Final Score: {best_model:.4f})")
+        else:
+            plt.title("Training History")
+
+        plt.xlabel("Generation/Iteration")
+        plt.ylabel("Accuracy")
+
     plt.grid(True)
 
     graph_filename = os.path.join(plots_dir, f"{file_id}_graph.png")
@@ -120,12 +164,18 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
     # 2. Save raw history & Config data as JSON
     data_filename = os.path.join(save_dir, f"{file_id}_data.json")
 
+    best_fitness_val = None
+    if hasattr(best_model, "fitness"):
+        best_fitness_val = best_model.fitness
+    elif isinstance(best_model, (float, int)):
+        best_fitness_val = best_model
+
     output_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "file_id": file_id,
         "results": {
             "history": history,
-            "best_fitness": best_model.fitness,
+            "best_fitness": best_fitness_val,
             "best_structure_code": best_model.structure_code
             if hasattr(best_model, "structure_code")
             else None,
@@ -135,35 +185,45 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
 
     # Extract Experiment Configuration if available
     if experiment:
-        config = {
-            "n_gen": experiment.n_gen,
-            "n_pop": len(experiment.population),
-            "evaluator": {},
-            "data": {},
-        }
+        config = {}
+        if is_qea:
+            config = {
+                "n_gen": experiment.n_gen,
+                "n_pop": len(experiment.population),
+                "evaluator": {},
+                "data": {},
+            }
 
-        # Evaluator Config
-        if hasattr(experiment, "evaluator"):
-            ev = experiment.evaluator
-            if hasattr(ev, "epochs"):
-                config["evaluator"]["epochs"] = ev.epochs
-            if hasattr(ev, "lr"):
-                config["evaluator"]["lr"] = ev.lr
-            if hasattr(ev, "device"):
-                config["evaluator"]["device"] = str(ev.device)
-            # Add builder info if possible
-            if hasattr(ev, "builder"):
-                config["evaluator"]["n_qubits"] = ev.builder.n_qubits
+            # Evaluator Config
+            if hasattr(experiment, "evaluator"):
+                ev = experiment.evaluator
+                if hasattr(ev, "epochs"):
+                    config["evaluator"]["epochs"] = ev.epochs
+                if hasattr(ev, "lr"):
+                    config["evaluator"]["lr"] = ev.lr
+                if hasattr(ev, "device"):
+                    config["evaluator"]["device"] = str(ev.device)
+                # Add builder info if possible
+                if hasattr(ev, "builder"):
+                    config["evaluator"]["n_qubits"] = ev.builder.n_qubits
 
-        # Data Manager Config
-        if hasattr(experiment, "data_mgr"):
-            dm = experiment.data_mgr
-            if hasattr(dm, "n_train"):
-                config["data"]["n_train"] = dm.n_train
-            if hasattr(dm, "n_test"):
-                config["data"]["n_test"] = dm.n_test
-            if hasattr(dm, "data_path"):
-                config["data"]["data_path"] = dm.data_path
+            # Data Manager Config
+            if hasattr(experiment, "data_mgr"):
+                dm = experiment.data_mgr
+                if hasattr(dm, "n_train"):
+                    config["data"]["n_train"] = dm.n_train
+                if hasattr(dm, "n_test"):
+                    config["data"]["n_test"] = dm.n_test
+                if hasattr(dm, "data_path"):
+                    config["data"]["data_path"] = dm.data_path
+        
+        elif hasattr(experiment, "objective_func_vals"):
+             config = {
+                 "type": "QiskitQCNN",
+                 "optimizer": "COBYLA", 
+                 "num_qubits": experiment.circuit.num_qubits if hasattr(experiment, "circuit") else None,
+                 "iterations": len(history) if isinstance(history, list) else 0
+             }
 
         output_data["configuration"] = config
 

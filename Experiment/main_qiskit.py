@@ -1,31 +1,46 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from DataManager import DataManager
-from qiskitQCNN_structure import QCNNStructure
-from Evaluation import QCNNTrainer
+import logging
+from qiskitQCNN.DataManager import DataManager
+from qiskitQCNN.qiskitQCNN_structure import QCNNStructure
+from qiskitQCNN.Evaluation import QCNNTrainer
+from QCNN.utils import initialize_output_dir, graph_history
 
 def main():
+    # 0. Initialize Output Directory & Logging
+    save_dir, file_id = initialize_output_dir(script_name="main_qiskit")
+    logger = logging.getLogger(__name__)
+
     # 1. Prepare Data
-    print("--- Step 1: Generating Data ---")
+    logger.info("--- Step 1: Generating Data ---")
     dm = DataManager(num_images=50)
     dm.generate_synthetic_dataset()
 
     # 2. Build Model (Flexible Qubits!)
-    print("\n--- Step 2: Building QCNN Model ---")
+    logger.info("\n--- Step 2: Building QCNN Model ---")
     q_struct = QCNNStructure(num_qubits=8) # เปลี่ยนเป็น 4 หรือ 16 ก็ได้ถ้าแก้ data gen ให้รองรับ
     circuit, input_params, weight_params = q_struct.build_full_circuit()
     
     # 3. Setup Trainer & Train
-    print("\n--- Step 3: Training ---")
+    logger.info("\n--- Step 3: Training ---")
     trainer = QCNNTrainer(circuit, input_params, weight_params)
     trainer.train(dm.train_images, dm.train_labels, max_iter=200)
 
     # 4. Evaluation
-    print("\n--- Step 4: Evaluation ---")
-    print("Train Score:")
-    trainer.evaluate(dm.train_images, dm.train_labels)
-    print("Test Score:")
-    trainer.evaluate(dm.test_images, dm.test_labels)
+    logger.info("\n--- Step 4: Evaluation ---")
+    logger.info("Train Score:")
+    train_score = trainer.evaluate(dm.train_images, dm.train_labels)
+    logger.info("Test Score:")
+    test_score = trainer.evaluate(dm.test_images, dm.test_labels)
+
+    # Save Result
+    graph_history(
+        best_model=test_score,
+        history=trainer.objective_func_vals,
+        experiment=trainer,
+        save_dir=save_dir,
+        file_id=file_id
+    )
 
     # 5. Visual Check
     y_predict = trainer.predict(dm.test_images)
