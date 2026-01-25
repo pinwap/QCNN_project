@@ -215,3 +215,9 @@ def save_model(model, save_dir, file_id):
     save_path = os.path.join(model_dir, f"{file_id}.pth")
     torch.save(model, save_path)
     print(f"✅ Model saved to: {save_path}")
+
+def calculate_gate(num_qubits: int, num_gate = 7):
+    while num_qubits>2:
+        return num_qubits//2 , num_qubits*5+((num_qubits//2)*2)
+    if num_qubits == 2:
+        return num_qubits, 7
