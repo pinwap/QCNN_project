@@ -24,7 +24,7 @@ def main():
     # 3. Setup Trainer & Train
     logger.info("\n--- Step 3: Training ---")
     trainer = QCNNTrainer(circuit, input_params, weight_params)
-    trainer.train(dm.train_images, dm.train_labels, max_iter=200)
+    trainer.train(dm.train_images, dm.train_labels, max_iter=40)
 
     # 4. Evaluation
     logger.info("\n--- Step 4: Evaluation ---")

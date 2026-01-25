@@ -220,7 +220,7 @@ def graph_history(best_model, history: dict, experiment=None, save_dir=None, fil
         elif hasattr(experiment, "objective_func_vals"):
              config = {
                  "type": "QiskitQCNN",
-                 "optimizer": "COBYLA", 
+                 "optimizer": "SPSA" if hasattr(experiment, "classifier") and "SPSA" in str(type(experiment.classifier.optimizer)) else "COBYLA", 
                  "num_qubits": experiment.circuit.num_qubits if hasattr(experiment, "circuit") else None,
                  "iterations": len(history) if isinstance(history, list) else 0
              }

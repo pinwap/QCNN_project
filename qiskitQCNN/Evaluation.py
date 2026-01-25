@@ -9,7 +9,7 @@ from IPython.display import clear_output
 
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.primitives import StatevectorEstimator as Estimator
-from qiskit_machine_learning.optimizers import COBYLA
+from qiskit_machine_learning.optimizers import COBYLA, SPSA
 from qiskit_machine_learning.algorithms.classifiers import NeuralNetworkClassifier
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
@@ -83,7 +83,7 @@ class QCNNTrainer:
             # สุ่มตามจำนวนพารามิเตอร์ของวงจร
             return np.random.random(self.qnn.num_weights)    
 
-    def train(self, X, y, max_iter=200):
+    def train(self, X, y, max_iter=40):
         initial_point = self.load_or_initialize_point()
         
         # Reset histories
@@ -94,7 +94,7 @@ class QCNNTrainer:
         
         self.classifier = NeuralNetworkClassifier(
             self.qnn,
-            optimizer=COBYLA(maxiter=max_iter),
+            optimizer=SPSA(maxiter=max_iter, learning_rate=0.01, perturbation=0.1),
             callback=self.callback_graph,
             initial_point=initial_point,
         )
