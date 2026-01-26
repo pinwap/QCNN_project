@@ -11,28 +11,23 @@ logger = logging.getLogger(__name__)
 
 def main():
     cfg = ExperimentConfig(
-        backend="ga-qcnn",
+        backend="qiskit-qcnn",
         dataset="mnist",
         data_path="../data",
         n_train=400,
         n_test=100,
         preprocessors=["bilinear_resize_4x4", "flatten"],
         n_qubits=16,
-        n_pop=50,
-        n_gen=20,
-        n_gates=180,
-        epochs=5,
-        lr=0.01,
-        save_outputs=True,
-        script_name="main_full",
+        max_iter=200,
+        save_outputs=False,
+        script_name="main_qiskit",
     )
 
     runner = ExperimentRunner(cfg)
     result = runner.run()
-
-    logger.info("\n🏁 Experiment Finished!")
     logger.info(result.summary)
 
 
 if __name__ == "__main__":
     main()
+    

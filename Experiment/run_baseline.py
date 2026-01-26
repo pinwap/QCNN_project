@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np
-from QCNN.DataManager import MNISTDataManager
+from data import DataConfig, DataManager
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.Evaluation import HybridEvaluator
 from QCNN.utils import setup_logging
@@ -19,7 +19,7 @@ def run_baseline():
 
     # 1. Setup
     # ใช้ข้อมูลน้อยหน่อยเพื่อความเร็วในการ Demo (Train 100รูป)
-    data_mgr = MNISTDataManager(n_train=100, n_test=50)
+    data_mgr = DataManager(DataConfig(dataset="mnist", n_train=100, n_test=50))
     builder = QCNNBuilder(n_qubits=16)
 
     # ⚠️ Key Point: Standard QCNN ต้องเทรนนานๆ (20 Epochs) เพราะไม่มี QEA ช่วย

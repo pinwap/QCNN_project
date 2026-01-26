@@ -1,10 +1,10 @@
-from QCNN.DataManager import BaseDataManager, MNISTDataManager
+from data import DataManager, MNISTDataManager
 from QCNN.Evaluation import Experiment, HybridEvaluator
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.QEA_core import QuantumChromosome
 
 __all__ = [
-    "BaseDataManager",
+    "DataManager",
     "MNISTDataManager",
     "Experiment",
     "HybridEvaluator",

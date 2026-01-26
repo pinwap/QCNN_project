@@ -15,7 +15,7 @@ from qiskit_algorithms.gradients import SPSAEstimatorGradient
 from qiskit_machine_learning.connectors import TorchConnector
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
-from QCNN.DataManager import BaseDataManager
+from data import DataManager
 from QCNN.QCNN_structure import QCNNBuilder
 from QCNN.QEA_core import QuantumChromosome
 
@@ -161,7 +161,7 @@ class HybridEvaluator(Evaluator):
 class Experiment:
     def __init__(
         self,
-        data_mgr: BaseDataManager,
+        data_mgr: DataManager,
         evaluator: Evaluator,
         n_pop: int = 10,
         n_gen: int = 5,
