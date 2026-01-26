@@ -15,5 +15,5 @@ from qiskit_machine_learning.neural_networks import EstimatorQNN
 
 from sklearn.model_selection import train_test_split
 
-from qiskitQCNN.DataManager import generate_dataset
-from qiskitQCNN.qiskitQCNN_structure import crate_qcnn_ansatz
+# from qiskitQCNN.DataManager import generate_dataset
+# from qiskitQCNN.qiskitQCNN_structure import crate_qcnn_ansatz
