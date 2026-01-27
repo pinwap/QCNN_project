@@ -2,7 +2,7 @@
 
 Usage:
     from experiment_template import ExperimentConfig, ExperimentRunner
-    cfg = ExperimentConfig(backend="ga-qcnn", dataset="mnist")
+    cfg = ExperimentConfig(backend="qea-qcnn", dataset="mnist")
     runner = ExperimentRunner(cfg)
     result = runner.run()
 """
@@ -14,14 +14,15 @@ from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 import logging
 
 from data import DataManager, Preprocessor, DataConfig
-from QCNN.QCNN_structure import QCNNBuilder
-from QCNN.Evaluation import Experiment as GAExperiment, HybridEvaluator
-from QCNN.utils import graph_history, initialize_output_dir, save_model
+from QEAQCNN.QCNN_structure import QCNNBuilder
+from QEAQCNN.Evaluation import Experiment as QEAExperiment, HybridEvaluator
+from qcnn_common.feature_maps import resolve_feature_map
+from QEAQCNN.utils import graph_history, initialize_output_dir, save_model
 
 logger = logging.getLogger(__name__)
 
 
-BackendType = Literal["ga-qcnn", "qiskit-qcnn"]
+BackendType = Literal["qea-qcnn", "qiskit-qcnn"]
 
 
 @dataclass
@@ -35,9 +36,9 @@ class ExperimentConfig:
         default_factory=lambda: ["bilinear_resize_4x4", "flatten"]
     )
     n_qubits: int = 16
-    encoding: str = "angle"  # placeholder for future PGE/PCE encoders
+    encoding: str = "angle"  # angle, pge, zz
 
-    # GA/QEA QCNN settings
+    # QEA QCNN settings
     n_pop: int = 50
     n_gen: int = 20
     n_gates: int = 180
@@ -73,8 +74,8 @@ class ExperimentRunner:
 
         data_mgr = self._build_data_manager()
 
-        if self.config.backend == "ga-qcnn":
-            return self._run_ga_qcnn(data_mgr)
+        if self.config.backend == "qea-qcnn":
+            return self._run_qea_qcnn(data_mgr)
         if self.config.backend == "qiskit-qcnn":
             return self._run_qiskit_qcnn(data_mgr)
         raise ValueError(f"Unsupported backend: {self.config.backend}")
@@ -96,11 +97,16 @@ class ExperimentRunner:
     # ----------------------
     # Backend runners
     # ----------------------
-    def _run_ga_qcnn(self, data_mgr: DataManager) -> ExperimentResult:
+    def _run_qea_qcnn(self, data_mgr: DataManager) -> ExperimentResult:
         builder = QCNNBuilder(self.config.n_qubits)
-        evaluator = HybridEvaluator(builder, epochs=self.config.epochs, lr=self.config.lr)
-
-        experiment = GAExperiment(
+        feature_map = resolve_feature_map(self.config.encoding)
+        evaluator = HybridEvaluator(
+            builder,
+            epochs=self.config.epochs,
+            lr=self.config.lr,
+            feature_map=feature_map,
+        )
+        experiment = QEAExperiment(
             data_mgr=data_mgr,
             evaluator=evaluator,
             n_pop=self.config.n_pop,
@@ -124,12 +130,13 @@ class ExperimentRunner:
     def _run_qiskit_qcnn(self, data_mgr: DataManager) -> ExperimentResult:
         # Lazy imports to keep dependencies optional for GA-only runs
         from qiskitQCNN.qiskitQCNN_structure import QCNNStructure
-        from qiskitQCNN.Evaluation import QCNNTrainer
+        from qiskitQCNN.trainer import QCNNTrainer
 
         x_train, y_train, x_test, y_test = data_mgr.get_data(as_numpy=True)
 
         q_struct = QCNNStructure(num_qubits=self.config.n_qubits)
-        circuit, input_params, weight_params = q_struct.build_full_circuit()
+        feature_map = resolve_feature_map(self.config.encoding)
+        circuit, input_params, weight_params = q_struct.build_full_circuit(feature_map)
 
         trainer = QCNNTrainer(circuit, input_params, weight_params)
         trainer.train(x_train, y_train, max_iter=self.config.max_iter)

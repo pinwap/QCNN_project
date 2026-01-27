@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     cfg = ExperimentConfig(
-        backend="ga-qcnn",
+        backend="qea-qcnn",
         dataset="mnist",
         data_path="../data",
         n_train=400,

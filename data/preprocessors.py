@@ -57,8 +57,17 @@ class EnsureFeatureDimension(Preprocessor):
 
 
 class DCTPreprocessor(Preprocessor):
+    def __init__(self, keep: int | None = None):
+        self.keep = keep
+
     def __call__(self, data: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError("DCT preprocessing not implemented yet.")
+        if not hasattr(torch.fft, "dct"):
+            raise RuntimeError("torch.fft.dct is unavailable; upgrade PyTorch to >= 2.1")
+        flat = data.view(data.shape[0], -1)
+        coeffs = torch.fft.dct(flat, dim=1, norm="ortho")
+        if self.keep:
+            coeffs = coeffs[:, : self.keep]
+        return coeffs
 
 
 PREPROCESSOR_REGISTRY: Dict[str, Callable[..., Preprocessor]] = {
@@ -68,6 +77,7 @@ PREPROCESSOR_REGISTRY: Dict[str, Callable[..., Preprocessor]] = {
     "pca_16": lambda: PCAReducer(16),
     "pca_32": lambda: PCAReducer(32),
     "dct": DCTPreprocessor,
+    "dct_keep_64": lambda: DCTPreprocessor(64),
 }
 
 
