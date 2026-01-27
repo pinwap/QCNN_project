@@ -98,7 +98,7 @@ class QCNNStructure:
         return ansatz
 
     def build_full_circuit(self, feature_map: str | FeatureMapBuilder | None = None):
-        fmap_builder = resolve_feature_map(feature_map or "zz")
+        fmap_builder = resolve_feature_map(feature_map)
         feature_map_circuit, feature_params = fmap_builder.build(self.num_qubits)
         ansatz = self.create_ansatz()
 

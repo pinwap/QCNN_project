@@ -40,6 +40,7 @@ class QCNNTrainer:
 
         self.classifier = None
 
+    # กราฟค่า loss ของแต่ละรอบ
     def _callback_graph(self, weights, obj_func_eval):
         clear_output(wait=True)
         self.objective_func_vals.append(obj_func_eval)
