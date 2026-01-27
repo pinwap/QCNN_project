@@ -15,7 +15,7 @@ from qiskit_machine_learning.neural_networks import EstimatorQNN
 from data import DataManager
 from QEAQCNN.QCNN_structure import QCNNBuilder
 from QEAQCNN.QEA_core import QuantumChromosome
-from qcnn_common.feature_maps import FeatureMapBuilder, resolve_feature_map
+from qcnn_shared.feature_maps import FeatureMapBuilder, resolve_feature_map
 
 # Suppress Qiskit Machine Learning logging warnings about gradients
 logging.getLogger("qiskit_machine_learning").setLevel(logging.ERROR)

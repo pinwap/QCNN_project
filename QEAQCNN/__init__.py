@@ -1,7 +1,7 @@
 from data import DataManager, MNISTDataManager
-from QCNN.Evaluation import Experiment, HybridEvaluator
-from QCNN.QCNN_structure import QCNNBuilder
-from QCNN.QEA_core import QuantumChromosome
+from QEAQCNN.Evaluation import Experiment, HybridEvaluator
+from QEAQCNN.QCNN_structure import QCNNBuilder
+from QEAQCNN.QEA_core import QuantumChromosome
 
 __all__ = [
     "DataManager",
