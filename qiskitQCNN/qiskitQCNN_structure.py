@@ -1,8 +1,7 @@
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
-from qiskit.circuit.library import z_feature_map
-from qiskit.quantum_info import SparsePauliOp
+from qcnn_shared.feature_maps import FeatureMapBuilder, resolve_feature_map
 
 
 class QCNNStructure:
@@ -22,27 +21,27 @@ class QCNNStructure:
         target.rz(np.pi / 2, 0)
         return target
 
-    # เอามาต่อเป็น convolutional layer
-    def conv_layer(self, num_qubits, param_prefix):
-        qc = QuantumCircuit(num_qubits, name=f"{param_prefix}Convolutional Layer")
-        qubits = list(range(num_qubits))
-        param_index = 0
-        params = ParameterVector(param_prefix, length=num_qubits * 3)
+    def conv_layer(self, active_qubits, param_prefix):
+        """Build a convolution layer over the current active qubits.
 
-        # คู่่ (0,1), (2,3),...
-        for q1, q2 in zip(qubits[0::2], qubits[1::2]):
-            qc.compose(
-                self._conv_circuit(params[param_index : (param_index + 3)]), [q1, q2], inplace=True
-            )
+        Handles any number of qubits (even/odd) by pairing adjacent qubits in two passes:
+        - pass 1: (0,1), (2,3), ...
+        - pass 2: (1,2), (3,4), ...
+        Unpaired last qubit (odd case) is left untouched.
+        """
+        n = len(active_qubits)
+        qc = QuantumCircuit(n, name=f"{param_prefix}Convolutional Layer")
+
+        pairs = []
+        pairs.extend([(i, i + 1) for i in range(0, n - 1, 2)])
+        pairs.extend([(i, i + 1) for i in range(1, n - 1, 2)])
+
+        params = ParameterVector(param_prefix, length=len(pairs) * 3)
+        p_idx = 0
+        for q1, q2 in pairs:
+            qc.compose(self._conv_circuit(params[p_idx : p_idx + 3]), [q1, q2], inplace=True)
             qc.barrier()
-            param_index += 3
-        # คู่ (1,2), (3,4),...
-        for q1, q2 in zip(qubits[1::2], qubits[2::2] + [0]):
-            qc.compose(
-                self._conv_circuit(params[param_index : (param_index + 3)]), [q1, q2], inplace=True
-            )
-            qc.barrier()
-            param_index += 3
+            p_idx += 3
 
         return qc
 
@@ -54,23 +53,30 @@ class QCNNStructure:
         target.ry(params[1], 1)
         target.cx(0, 1)
         target.ry(params[2], 1)
-
         return target
 
-    def _pool_layer(self, sources, sinks, param_prefix):
-        num_qubits = len(sources) + len(sinks)
-        qc = QuantumCircuit(num_qubits, name=f"{param_prefix}Pooling Layer")
-        param_index = 0
-        params = ParameterVector(param_prefix, length=num_qubits // 2 * 3)
-        for source, sink in zip(sources, sinks):
-            qc.compose(
-                self._pool_circuit(params[param_index : (param_index + 3)]),
-                [source, sink],
-                inplace=True,
-            )
+    def _pool_layer(self, active_qubits, param_prefix):
+        """Pooling that halves (ceil) the active set; leftover qubit (odd) passes through."""
+        n = len(active_qubits)
+        qc = QuantumCircuit(n, name=f"{param_prefix}Pooling Layer")
+
+        pairs = []
+        survivors = []
+        for i in range(0, n, 2):
+            if i + 1 < n:
+                pairs.append((i, i + 1))
+                survivors.append(active_qubits[i])  # keep sink survivor position
+            else:
+                survivors.append(active_qubits[i])  # odd leftover carries forward
+
+        params = ParameterVector(param_prefix, length=len(pairs) * 3)
+        p_idx = 0
+        for src, sink in pairs:
+            qc.compose(self._pool_circuit(params[p_idx : p_idx + 3]), [src, sink], inplace=True)
             qc.barrier()
-            param_index += 3
-        return qc
+            p_idx += 3
+
+        return qc, survivors
 
     def create_ansatz(self):
         current_qubits = list(range(self.num_qubits))
@@ -78,36 +84,26 @@ class QCNNStructure:
 
         layer_count = 1
         while len(current_qubits) > 1:
-            # 1. Convolutional Layer
-            num_active = len(current_qubits)
             layer_name = f"L{layer_count}"
-            conv = self.conv_layer(num_active, f"{layer_name}_c")
+
+            conv = self.conv_layer(current_qubits, f"{layer_name}_c")
             ansatz.compose(conv, current_qubits, inplace=True)
 
-            # 2. Pooling Layer (ลดจำนวนลงครึ่งหนึ่ง)
-            # แบ่งเป็นครึ่งซ้าย (Sources) และครึ่งขวา (Sinks) หรือคู่เว้นคู่
-            sources = current_qubits[0::2]  # เก็บไว้
-            sinks = current_qubits[1::2]  # ทิ้ง (Trace out / Measure)
-
-            mid = len(current_qubits) // 2
-            sources = current_qubits[:mid]
-            sinks = current_qubits[mid:]
-
-            pool = self._pool_layer(sources, sinks, f"{layer_name}_p")
+            pool, survivors = self._pool_layer(current_qubits, f"{layer_name}_p")
             ansatz.compose(pool, current_qubits, inplace=True)
 
-            # อัปเดต Qubit ที่เหลือรอด (เฉพาะ Sources)
-            current_qubits = sources
+            current_qubits = survivors
             layer_count += 1
 
         return ansatz
 
-    def build_full_circuit(self):
-        feature_map = z_feature_map(self.num_qubits)
+    def build_full_circuit(self, feature_map: str | FeatureMapBuilder | None = None):
+        fmap_builder = resolve_feature_map(feature_map or "zz")
+        feature_map_circuit, feature_params = fmap_builder.build(self.num_qubits)
         ansatz = self.create_ansatz()
 
         circuit = QuantumCircuit(self.num_qubits)
-        circuit.compose(feature_map, range(self.num_qubits), inplace=True)
+        circuit.compose(feature_map_circuit, range(self.num_qubits), inplace=True)
         circuit.compose(ansatz, range(self.num_qubits), inplace=True)
 
-        return circuit, feature_map.parameters, ansatz.parameters
+        return circuit, feature_params, ansatz.parameters

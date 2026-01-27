@@ -16,7 +16,7 @@ import logging
 from data import DataManager, Preprocessor, DataConfig
 from QEAQCNN.QCNN_structure import QCNNBuilder
 from QEAQCNN.Evaluation import Experiment as QEAExperiment, HybridEvaluator
-from qcnn_common.feature_maps import resolve_feature_map
+from qcnn_shared.feature_maps import resolve_feature_map
 from QEAQCNN.utils import graph_history, initialize_output_dir, save_model
 
 logger = logging.getLogger(__name__)
