@@ -19,7 +19,7 @@ class QCNNTrainer:
     def __init__(self, circuit, input_params, weight_params, initial_point_path=None):
         self.circuit = circuit
         self.objective_func_vals = []
-        self.initial_point_path = initial_point_path or "initial_point.json"
+        self.initial_point_path = initial_point_path or "11_qcnn_initial_point.json"
 
         # Setup QNN
         estimator = AerEstimator()

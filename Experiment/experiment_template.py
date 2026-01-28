@@ -49,7 +49,8 @@ class ExperimentConfig: #เก็บการตั้งค่าการท�
     max_iter: int = 200
     retrain_with_qiskit: bool = False # If True, train best QEA structure using Qiskit Trainer
     structure_code: Optional[List[int]] = None # Use this structure if provided
-
+    initial_point_path: Optional[str] = None # Path to initial weights for Qiskit Trainer
+    
     # Output control
     save_outputs: bool = True #จะให้เซฟลงไฟล์ไหม?
     script_name: str = "experiment" #ชื่อไฟล์ Log
@@ -207,7 +208,7 @@ class ExperimentRunner:
         # 3. Train
         logger.info(f"Training start (Max Iter: {self.config.max_iter})...")
         # Reuse initial weights if provided (and structure matches) - logic implicit in QCNNTrainer if we passed path
-        trainer = QCNNTrainer(circuit, input_params, weight_params, initial_point_path=self.config.initial_weights_path)
+        trainer = QCNNTrainer(circuit, input_params, weight_params, initial_point_path=None)
         
         trainer.train(x_train, y_train, max_iter=self.config.max_iter)
 

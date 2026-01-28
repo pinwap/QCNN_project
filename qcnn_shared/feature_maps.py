@@ -53,7 +53,7 @@ class ZZFeatureMapBuilder(FeatureMapBuilder):
 
     def build(self, n_qubits: int) -> Tuple[QuantumCircuit, Iterable]:
         fmap = ZZFeatureMap(feature_dimension=n_qubits, reps=self.reps, entanglement=self.entanglement)
-        return fmap, tuple(fmap.parameters)
+        return fmap.decompose(), tuple(fmap.parameters)
 
 
 FEATURE_MAP_REGISTRY = {
