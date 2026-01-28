@@ -65,7 +65,7 @@ class QCNNStructure:
         for i in range(0, n, 2):
             if i + 1 < n:
                 pairs.append((i, i + 1))
-                survivors.append(active_qubits[i])  # keep sink survivor position
+                survivors.append(active_qubits[i + 1])  # keep sink survivor position
             else:
                 survivors.append(active_qubits[i])  # odd leftover carries forward
 
