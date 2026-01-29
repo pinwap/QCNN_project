@@ -1,0 +1,6 @@
+type: hybrid
+epochs: 50
+lr: 0.001
+gradient_method: spsa
+device: null
+use_v2_primitives: true

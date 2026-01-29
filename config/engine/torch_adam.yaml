@@ -1,0 +1,5 @@
+type: hybrid
+epochs: 5
+lr: 0.01
+device: null # auto-detect
+use_v2_primitives: true

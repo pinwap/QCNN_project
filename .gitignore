@@ -1,4 +1,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-data/MNIST/*
+*.DS_Store
+.env
+.venv/

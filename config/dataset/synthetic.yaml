@@ -1,0 +1,6 @@
+name: synthetic
+n_train: 100
+n_test: 20
+strip_width: 2
+target_dim: 16
+preprocessors: ["flatten"]

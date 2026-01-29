@@ -1,0 +1,3 @@
+name: auto_evolution
+model_type: evolutionary
+# We can add specific overrides for the auto-evolution task here if needed

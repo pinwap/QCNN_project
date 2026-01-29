@@ -1,0 +1,7 @@
+name: mnist
+data_path: "./data"
+n_train: 200
+n_test: 50
+digits: [3, 6]
+target_dim: 16
+preprocessors: ["bilinear_resize_4x4", "flatten"]
