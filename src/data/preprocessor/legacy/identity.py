@@ -1,6 +1,6 @@
 from torch import Tensor
 
-from .base import BasePreprocessor
+from ..base import BasePreprocessor
 
 
 class Identity(BasePreprocessor):

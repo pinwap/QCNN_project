@@ -1,22 +1,20 @@
 from typing import Callable, Dict, Sequence
 
 from .base import BasePreprocessor
-from .bilinear_resize import BilinearResize
-from .dct_preprocessor import DCTPreprocessor
+# from .bilinear_resize import BilinearResize
+# from .dct_preprocessor import DCTPreprocessor
 from .flatten import Flatten
-from .identity import Identity
+# from .identity import Identity
 from .pca_reducer import PCAReducer
 
 PREPROCESSOR_REGISTRY: Dict[str, Callable[..., BasePreprocessor]] = {
-    "linear": Identity,
-    "bilinear_resize_4x4": lambda: BilinearResize((4, 4)),
+    # "linear": Identity,
+    # "bilinear_resize_4x4": lambda: BilinearResize((4, 4)),
     "flatten": Flatten,
     "pca_4": lambda: PCAReducer(4),
     "pca_8": lambda: PCAReducer(8),
     "pca_16": lambda: PCAReducer(16),
-    "pca_32": lambda: PCAReducer(32),
-    "dct_16": lambda: DCTPreprocessor(16),
-    "dct_64": lambda: DCTPreprocessor(64),
+    # "dct_16": lambda: DCTPreprocessor(16),
 }
 
 
