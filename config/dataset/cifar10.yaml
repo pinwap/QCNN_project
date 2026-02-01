@@ -1,7 +1,0 @@
-name: cifar10
-data_path: "./data"
-n_train: 400
-n_test: 100
-digits: [0, 1]
-target_dim: 16
-preprocessors: ["bilinear_resize_4x4", "flatten"]

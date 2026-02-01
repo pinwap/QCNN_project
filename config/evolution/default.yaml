@@ -1,4 +1,0 @@
-n_pop: 20
-n_gen: 10
-n_gates: 200
-mutation_rate: 0.1

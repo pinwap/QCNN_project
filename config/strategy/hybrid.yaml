@@ -1,5 +1,0 @@
-type: hybrid
-epochs: 5
-lr: 0.01
-device: null
-use_v2_primitives: true
