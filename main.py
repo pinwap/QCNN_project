@@ -41,13 +41,13 @@ Main entry point for executing training and evolutionary search tasks.
 def main(cfg: DictConfig):
     # 0. Initialize Old-School Logging Directory
     # 0. Initialize Old-School Logging Directory
-    # cfg.task is now a DictConfig (loaded from yaml), so specific name is in cfg.task.name
-    task_name_str = cfg.task.get("name", "unknown_task")
+    # cfg.task is now a DictConfig (loaded from yaml), so specific name is in cfg.task_name
+    task_name_str = cfg.get("task_name", "unknown_task")
 
     # Extract metadata for folder naming
-    fm_name = cfg.feature_map.type
+    fm_name = cfg.feature_map_type
     # Take the first preprocessor or 'raw' if list is empty
-    prep_list = list(cfg.dataset.preprocessors)
+    prep_list = list(cfg.preprocessors)
     prep_name = prep_list[0] if prep_list else "raw"
 
     save_dir, file_id = initialize_output_dir(
@@ -70,13 +70,13 @@ def main(cfg: DictConfig):
 
     # 1. Initialize Data
     data_mgr = DataManager(
-        dataset_name=cfg.dataset.name,
-        data_path=cfg.dataset.data_path,
-        n_train=cfg.dataset.n_train,
-        n_test=cfg.dataset.n_test,
-        preprocessors=list(cfg.dataset.preprocessors),
-        target_dim=cfg.dataset.target_dim,
-        target_labels=tuple(cfg.dataset.digits) if cfg.dataset.digits else None,
+        dataset_name=cfg.dataset_name,
+        data_path=cfg.data_path,
+        n_train=cfg.n_train,
+        n_test=cfg.n_test,
+        preprocessors=list(cfg.preprocessors),
+        target_dim=cfg.target_dim,
+        target_labels=tuple(cfg.digits) if cfg.digits else None,
     )
     x_train, y_train, x_test, y_test = data_mgr.get_data()
 
@@ -86,38 +86,38 @@ def main(cfg: DictConfig):
             logger.info("Starting Task: Auto-Evolution (Search + Retrain)")
 
             # Phase 1: Setup Evolution Search
-            if cfg.strategy.type == "hybrid":
+            if cfg.strategy_type == "hybrid":
                 strategy = HybridStrategy(
                     num_qubits=cfg.num_qubits,
-                    epochs=cfg.strategy.epochs,
-                    lr=cfg.strategy.lr,
-                    device=cfg.engine.device,
-                    gradient_method=cfg.engine.get("gradient_method", "param_shift"),
-                    feature_map=cfg.feature_map.type,
+                    epochs=cfg.eval_epochs,
+                    lr=cfg.eval_lr,
+                    device=cfg.get("device"),
+                    gradient_method=cfg.get("gradient_method", "param_shift"),
+                    feature_map=cfg.feature_map_type,
                 )
             else:
                 strategy = QiskitStrategy(
                     num_qubits=cfg.num_qubits,
-                    max_iter=cfg.strategy.max_iter,
-                    feature_map=cfg.feature_map.type,
+                    max_iter=cfg.eval_max_iter,
+                    feature_map=cfg.feature_map_type,
                 )
 
             search = EvolutionarySearch(
                 data_manager=data_mgr,
                 strategy=strategy,
-                n_pop=cfg.evolution.n_pop,
-                n_gen=cfg.evolution.n_gen,
-                n_gates=cfg.evolution.n_gates,
+                n_pop=cfg.n_pop,
+                n_gen=cfg.n_gen,
+                n_gates=cfg.n_gates,
             )
 
             # Phase 2: Setup Production Engine (Retrainer)
             production_engine = HybridEngine(
-                feature_map=cfg.feature_map.type,
-                epochs=cfg.engine.epochs,
-                lr=cfg.engine.lr,
-                gradient_method=cfg.engine.get("gradient_method", "param_shift"),
-                use_v2_primitives=cfg.engine.get("use_v2_primitives", False),
-                device=cfg.engine.device,
+                feature_map=cfg.feature_map_type,
+                epochs=cfg.train_epochs,
+                lr=cfg.train_lr,
+                gradient_method=cfg.get("gradient_method", "param_shift"),
+                use_v2_primitives=cfg.get("use_v2_primitives", False),
+                device=cfg.get("device"),
             )
 
             # Execution: Run Auto-Evolution Workflow
@@ -171,28 +171,28 @@ def main(cfg: DictConfig):
             logger.info("Starting Task: Evolutionary Architecture Search")
 
             # Resolve Strategy
-            if cfg.strategy.type == "hybrid":
+            if cfg.strategy_type == "hybrid":
                 strategy = HybridStrategy(
                     num_qubits=cfg.num_qubits,
-                    epochs=cfg.strategy.epochs,
-                    lr=cfg.strategy.lr,
-                    device=cfg.engine.device,
-                    gradient_method=cfg.engine.get("gradient_method", "param_shift"),
-                    feature_map=cfg.feature_map.type,
+                    epochs=cfg.eval_epochs,
+                    lr=cfg.eval_lr,
+                    device=cfg.get("device"),
+                    gradient_method=cfg.get("gradient_method", "param_shift"),
+                    feature_map=cfg.feature_map_type,
                 )
             else:
                 strategy = QiskitStrategy(
                     num_qubits=cfg.num_qubits,
-                    max_iter=cfg.strategy.max_iter,
-                    feature_map=cfg.feature_map.type,
+                    max_iter=cfg.eval_max_iter,
+                    feature_map=cfg.feature_map_type,
                 )
 
             search = EvolutionarySearch(
                 data_manager=data_mgr,
                 strategy=strategy,
-                n_pop=cfg.evolution.n_pop,
-                n_gen=cfg.evolution.n_gen,
-                n_gates=cfg.evolution.n_gates,
+                n_pop=cfg.n_pop,
+                n_gen=cfg.n_gen,
+                n_gates=cfg.n_gates,
             )
             best_chromo, evolution_history = search.run()
             logger.info(
@@ -222,27 +222,27 @@ def main(cfg: DictConfig):
             logger.info("Starting Task: Standard Training")
 
             # Resolve Engine
-            if cfg.engine.type == "hybrid":
+            if cfg.engine_type == "hybrid":
                 engine = HybridEngine(
-                    feature_map=cfg.feature_map.type,
-                    epochs=cfg.engine.epochs,
-                    lr=cfg.engine.lr,
-                    gradient_method=cfg.engine.get("gradient_method", "param_shift"),
-                    use_v2_primitives=cfg.engine.get("use_v2_primitives", False),
-                    device=cfg.engine.device,
+                    feature_map=cfg.feature_map_type,
+                    epochs=cfg.train_epochs,
+                    lr=cfg.train_lr,
+                    gradient_method=cfg.get("gradient_method", "param_shift"),
+                    use_v2_primitives=cfg.get("use_v2_primitives", False),
+                    device=cfg.get("device"),
                 )
             else:
                 engine = QiskitEngine(
-                    feature_map=cfg.feature_map.type,
-                    max_iter=cfg.engine.max_iter,  # Map max_iter for Qiskit
+                    feature_map=cfg.feature_map_type,
+                    max_iter=cfg.get("train_max_iter"),  # Map max_iter for Qiskit
                 )
 
             # Resolve Model
-            if cfg.task.model_type == "standard":
+            if cfg.model_type == "standard":
                 model = StandardQCNN(num_qubits=cfg.num_qubits)
-            elif cfg.task.model_type == "evolutionary":
+            elif cfg.model_type == "evolutionary":
                 # Check for chromosome_path in config
-                chromo_path = cfg.task.get("chromosome_path")
+                chromo_path = cfg.get("chromosome_path")
                 if chromo_path and os.path.exists(chromo_path):
                     # Load the chromosome (it was saved with torch.save)
                     # We only need the collapsed genes (list of ints)

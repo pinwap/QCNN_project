@@ -1,13 +1,40 @@
-defaults:
-  - _self_
-  - task: evolution
-  - evolution: default
-  - dataset: mnist
-  - engine: hybrid
-  - strategy: hybrid
-  - feature_map: angle
-  - preset: null
+# Default Configuration (Consolidated)
+task_name: evolution
+model_type: standard
 
+# Dataset parameters
+dataset_name: mnist
+data_path: "./data"
+n_train: 400
+n_test: 100
+digits: [3, 6]
+target_dim: 16
+preprocessors: ["bilinear_resize_4x4", "flatten"]
+
+# Evolution parameters
+n_pop: 20
+n_gen: 10
+n_gates: 200
+mutation_rate: 0.1
+
+# Engine parameters (Training)
+engine_type: hybrid
+train_epochs: 50
+train_lr: 0.001
+gradient_method: spsa
+device: null
+use_v2_primitives: true
+
+# Strategy parameters (Evolution Evaluation)
+strategy_type: hybrid
+eval_epochs: 5
+eval_lr: 0.01
+eval_max_iter: 50
+
+# Feature Map parameters
+feature_map_type: angle
+
+# Global parameters
 num_qubits: 16
 verbose: true
 seed: 42
@@ -19,7 +46,29 @@ notifications:
 
 hydra:
   run:
-    dir: ./output/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: .
   sweep:
-    dir: ./output/multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: ${hydra.job.num}
+    dir: .
+    subdir: .
+  output_subdir: null
+  job:
+    chdir: False
+  hydra_logging:
+    version: 1
+    root:
+      level: CRITICAL
+  job_logging:
+    version: 1
+    root:
+      handlers: [console]
+    handlers:
+      file:
+        class: logging.FileHandler
+        filename: /dev/null
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
