@@ -78,8 +78,9 @@ class EvolutionarySearch:
                 struct_code = chromo.collapse()
 
                 # B. Call the Evaluation Strategy
-                acc = self.strategy.evaluate(struct_code, x_train, y_train, x_test, y_test)
+                acc, model_state = self.strategy.evaluate(struct_code, x_train, y_train, x_test, y_test)
                 chromo.fitness = acc
+                chromo.best_model_state = model_state
 
                 logger.info(f"  Candidate {i + 1} Result: Accuracy = {acc:.4f}")
 

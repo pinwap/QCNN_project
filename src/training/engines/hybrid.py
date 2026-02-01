@@ -96,6 +96,7 @@ class HybridEngine(BaseEngine):
         y_train: torch.Tensor,
         x_test: Optional[torch.Tensor] = None,
         y_test: Optional[torch.Tensor] = None,
+        initial_state_dict: Optional[dict] = None,
     ) -> Tuple[float, dict, Any]:
         num_qubits = circuit.num_qubits
         # สร้าง feature map
@@ -125,16 +126,31 @@ class HybridEngine(BaseEngine):
 
         model = TorchConnector(qnn).to(self.device) # สร้าง PyTorch model จาก QNN
 
-        # Explicit initialization to avoid Barren Plateaus/Zero-gradient starts
-        # สุ่มค่าเริ่มต้นของ weights ในช่วง [-0.5, 0.5] เพื่อหลีกเลี่ยงปัญหา Barren Plateaus
-        with torch.no_grad():
-            for p in model.parameters():
-                p.uniform_(-0.5, 0.5)
+        # Check for initial weights
+        if initial_state_dict is not None:
+             # Load pre-trained weights if provided (Transfer Learning)
+            try:
+                model.load_state_dict(initial_state_dict)
+                if self.verbose:
+                    logger.info("HybridEngine: Loaded initial weights from state dictionary.")
+            except Exception as e:
+                logger.warning(f"HybridEngine: Failed to load initial weights: {e}. Falling back to random init.")
+                # Explicit initialization to avoid Barren Plateaus/Zero-gradient starts
+                with torch.no_grad():
+                    for p in model.parameters():
+                        p.uniform_(-0.5, 0.5)
+        else:
+            # Explicit initialization to avoid Barren Plateaus/Zero-gradient starts
+            # สุ่มค่าเริ่มต้นของ weights ในช่วง [-0.5, 0.5] เพื่อหลีกเลี่ยงปัญหา Barren Plateaus
+            with torch.no_grad():
+                for p in model.parameters():
+                    p.uniform_(-0.5, 0.5)
+            if self.verbose:
+                logger.info("HybridEngine: Initialized weights with uniform distribution [-0.5, 0.5]")
 
         optimizer = optim.Adam(model.parameters(), lr=self.lr)
 
         if self.verbose:
-            logger.info("HybridEngine: Initialized weights with uniform distribution [-0.5, 0.5]")
             logger.debug(
                 f"HybridEngine: Circuit parameters: {[p.name for p in full_circuit.parameters]}"
             )

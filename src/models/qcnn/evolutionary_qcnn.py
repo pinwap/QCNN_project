@@ -77,7 +77,6 @@ class EvolutionaryQCNN(BaseQCNN):
         q_a, q_b = q_pair
         p = list(params)
         # Structure: G1(a) -> G2(b) -> GG(a,b) -> G3(a) -> G4(b)
-        genes = [next(self._gene_iter) for _ in range(5)]
         self._append_single_gate(qc, genes[0], q_a, p[0]) 
         self._append_single_gate(qc, genes[1], q_b, p[1])
         self._append_two_gate(qc, genes[2], q_a, q_b, p[2])

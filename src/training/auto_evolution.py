@@ -41,7 +41,13 @@ class AutoEvolutionPipeline:
             return 0.0, [], None, None, []
 
         # Get the final verified structure code
-        if hasattr(best_chromo, "collapse"):
+        # hasattr = has attribute เช็คว่า object นั้นมี attribute ชื่อ structure_code หรือไม่
+        if hasattr(best_chromo, "structure_code") and best_chromo.structure_code:
+            # Use the cached structure code that corresponds to the fitness/weights
+            struct_code = best_chromo.structure_code
+            logger.info("Using cached structure code from best chromosome.")
+        elif hasattr(best_chromo, "collapse"):
+            logger.warning("Cached structure code not found. Re-collapsing (WARNING: Structure might change if not converged).")
             struct_code = best_chromo.collapse()
         elif hasattr(best_chromo, "genes"):
             struct_code = best_chromo.genes
@@ -50,6 +56,9 @@ class AutoEvolutionPipeline:
 
         logger.info(f"PHASE 1 COMPLETE. Best Accuracy: {best_chromo.fitness:.4f}")
         logger.info(f"Best Structure Code: {struct_code}")
+
+        # Retrieve best model state if available
+        initial_state = getattr(best_chromo, "best_model_state", None)
 
         # 2. Phase 2: Retraining
         logger.info("PHASE 2: Initializing Production Model with discovered architecture...")
@@ -64,8 +73,9 @@ class AutoEvolutionPipeline:
             model=production_model, engine=self.production_engine
         )
 
+        logger.info(f"PHASE 2: Transferring weights from best individual (if available)...")
         final_score, training_history, trained_obj = production_pipeline.run(
-            x_train, y_train, x_test, y_test
+            x_train, y_train, x_test, y_test, initial_state_dict=initial_state
         )
 
         logger.info(f"Auto-Evolution Workflow Complete. Final Retrained Score: {final_score:.4f}")

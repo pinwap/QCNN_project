@@ -1,5 +1,5 @@
 import copy
-from typing import List
+from typing import Any, List, Optional
 
 from .gene import QuantumGene
 
@@ -19,6 +19,7 @@ class QuantumChromosome:
         self.binary_code: List[int] = []
         self.structure_code: List[int] = [] # โค้ดโครงสร้าง QCNN (0-3) ไว้ส่งให้ build circuit
         self.fitness: float = 0.0 # ความแม่นของวงจร
+        self.best_model_state: Optional[Any] = None # เก็บ weights ของโมเดลที่ดีที่สุด
 
     def collapse(self) -> List[int]:
         """
@@ -61,5 +62,11 @@ class QuantumChromosome:
         new_instance.genes = copy.deepcopy(self.genes)
         new_instance.binary_code = list(self.binary_code)
         new_instance.structure_code = list(self.structure_code)
+        try:
+             # Try deepcopy for safe standalone copy (especially for dicts/lists)
+            new_instance.best_model_state = copy.deepcopy(self.best_model_state)
+        except Exception:
+             # Fallback if the model state is not pickle-able or deepcopy-able (e.g. some Qiskit objects)
+            new_instance.best_model_state = self.best_model_state
         new_instance.fitness = self.fitness
         return new_instance

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 import torch
 
@@ -44,11 +44,11 @@ class HybridStrategy(EvaluationStrategy):
         y_train: torch.Tensor,
         x_test: torch.Tensor,
         y_test: torch.Tensor,
-    ) -> float:
+    ) -> Tuple[float, Any]:
         model_builder = EvolutionaryQCNN(self.num_qubits, structure_code) # เป็น object ของ class EvolutionaryQCNN ที่สามารถทำ QEA ได้
         qc, params, last_qubit = model_builder.build_with_metadata() #สร้างวงจร QCNN ตาม structure_code ที่ให้มา
 
-        score, _, _ = self.engine.fit(
+        score, _, model_state = self.engine.fit(
             circuit=qc,
             params=params,
             last_qubit=last_qubit,
@@ -57,4 +57,4 @@ class HybridStrategy(EvaluationStrategy):
             x_test=x_test,
             y_test=y_test,
         )
-        return score
+        return score, model_state

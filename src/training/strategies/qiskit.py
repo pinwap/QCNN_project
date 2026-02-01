@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import Any, List, Tuple
 
 import torch
 
@@ -34,11 +34,11 @@ class QiskitStrategy(EvaluationStrategy):
         y_train: torch.Tensor,
         x_test: torch.Tensor,
         y_test: torch.Tensor,
-    ) -> float:
+    ) -> Tuple[float, Any]:
         model_builder = EvolutionaryQCNN(self.num_qubits, structure_code)
         qc, params, last_qubit = model_builder.build_with_metadata()
 
-        score, _, _ = self.engine.fit(
+        score, _, model_state = self.engine.fit(
             circuit=qc,
             params=params,
             last_qubit=last_qubit,
@@ -47,4 +47,4 @@ class QiskitStrategy(EvaluationStrategy):
             x_test=x_test,
             y_test=y_test,
         )
-        return score
+        return score, model_state

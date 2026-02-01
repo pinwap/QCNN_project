@@ -32,7 +32,7 @@ class ProductionPipeline:
             # Default to Hybrid Engine for production training
             self.engine = HybridEngine(epochs=epochs, lr=lr, device=device, verbose=verbose)
 
-    def run(self, x_train, y_train, x_test=None, y_test=None):
+    def run(self, x_train, y_train, x_test=None, y_test=None, initial_state_dict=None):
         """
         Execute the training pipeline.
         """
@@ -52,6 +52,7 @@ class ProductionPipeline:
             y_train=y_train,
             x_test=x_test,
             y_test=y_test,
+            initial_state_dict=initial_state_dict
         )
 
         logger.info(f"Pipeline Execution Complete. Final Score: {score:.4f}")

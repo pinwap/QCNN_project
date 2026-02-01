@@ -4,3 +4,5 @@ __pycache__/
 *.DS_Store
 .env
 .venv/
+# ignore all file from folder RESULT
+RESULT/
