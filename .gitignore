@@ -1,4 +1,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-data/MNIST/*
+*.DS_Store
+.env
+.venv/
+# ignore all file from folder RESULT
+RESULT/
