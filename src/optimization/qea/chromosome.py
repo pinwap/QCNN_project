@@ -6,24 +6,29 @@ from .gene import QuantumGene
 
 class QuantumChromosome:
     """
-    A collection of QuantumGenes that represents a solution candidate.
+    2gene แทน 1 gate ，num_gates = จำนวน gate
+    genes = หลาย gene = คือโครโมโซมที่แทน QCNN 1 วงจร = 1 คน
     """
 
     def __init__(self, num_gates: int) -> None:
         self.num_gates = num_gates
-        # Each gate is represented by 2 bits/genes
+        
+        # สร้าง gene จำนวน num_gates*2 เพื่อ 2 gene = 1 gate
         self.genes: List[QuantumGene] = [QuantumGene() for _ in range(num_gates * 2)]
 
         self.binary_code: List[int] = []
-        self.structure_code: List[int] = []
-        self.fitness: float = 0.0
+        self.structure_code: List[int] = [] # โค้ดโครงสร้าง QCNN (0-3) ไว้ส่งให้ build circuit
+        self.fitness: float = 0.0 # ความแม่นของวงจร
 
     def collapse(self) -> List[int]:
-        """Measure all genes to get a classical binary string and convert to gate codes."""
-        # 1. Observe each gene
+        """
+        Measure all genes to get a classical binary string and convert to gate codes.
+        วัดโครโมโซมทั้งหมดในประชากร แล้วแปลงเป็นเกต
+        """
+        # 1. วัด gene แต่ละตัว binary
         self.binary_code = [gene.observe() for gene in self.genes]
 
-        # 2. Convert binary pairs to integer gate codes (0-3)
+        # 2. แปลง Binary คู่ เป็น รหัสเกต (0-3)
         self.structure_code = [
             (self.binary_code[i] << 1) | self.binary_code[i + 1]
             for i in range(0, len(self.binary_code), 2)
@@ -31,10 +36,14 @@ class QuantumChromosome:
         return self.structure_code
 
     def update_genes(self, global_best_chromosome: "QuantumChromosome") -> None:
-        """Update each gene's rotation towards the global best chromosome."""
+        """
+        Update each gene's rotation towards the global best chromosome.
+        หมุนมุมโดยเทียบ คน(วงจร)นี้ กับ คน(วงจร)ที่ Best
+        """
         best_binary = global_best_chromosome.binary_code
         best_fitness = global_best_chromosome.fitness
 
+        # เทียบทีละบิต
         for i, gene in enumerate(self.genes):
             gene.rotate(
                 current_bit=self.binary_code[i],
@@ -44,7 +53,10 @@ class QuantumChromosome:
             )
 
     def copy(self) -> "QuantumChromosome":
-        """Create a deep copy of the chromosome."""
+        """
+        Create a deep copy of the chromosome.
+        ฟังก์ชันสำหรับ copy ตัวเอง (ใช้ตอนเก็บ Global Best)
+        """
         new_instance = QuantumChromosome(self.num_gates)
         new_instance.genes = copy.deepcopy(self.genes)
         new_instance.binary_code = list(self.binary_code)

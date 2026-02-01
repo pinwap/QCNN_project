@@ -32,6 +32,10 @@ from utils import (  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
+"""
+Main entry point for executing training and evolutionary search tasks.
+ตัวเชื่อมทุกอย่างเข้าด้วยกัน ใช้ hydra ในการจัดการ config file
+"""
 
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg: DictConfig):
@@ -76,7 +80,6 @@ def main(cfg: DictConfig):
     )
     x_train, y_train, x_test, y_test = data_mgr.get_data()
 
-    # 2. Perform Task
     # 2. Perform Task
     try:
         if task_name_str == "auto_evolution":

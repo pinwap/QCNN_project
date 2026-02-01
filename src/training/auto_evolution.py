@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 class AutoEvolutionPipeline:
     """
+    เรียกใช้ Evolutionary Search -> โครงสร้าง QCNN ที่ดีที่สุด แล้วเอาไป retrain ต่อเลย
     Automated workflow that runs Evolutionary Search to find the best QCNN architecture,
     and then immediately launches a Production Pipeline to retrain that best architecture
     for a longer period (higher number of epochs).

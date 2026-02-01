@@ -7,7 +7,7 @@ from training.engines.hybrid import HybridEngine
 
 logger = logging.getLogger(__name__)
 
-
+# เป็นตัวเรียกใช้ (จัดการ Pipeline สำหรับการเทรน) โมเดล QCNN แบบปกติ (ไม่ใช่แบบ Evolutionary)
 class ProductionPipeline:
     """
     Standard Pipeline for production-grade training of a fixed QCNN model.
@@ -25,7 +25,7 @@ class ProductionPipeline:
         verbose: bool = True,
     ):
         self.model = model
-
+        # เลือกว่าจะใช้ engine ไหนในการเทรน เครื่องที่สร้างเอา(hybrid) หรือ qiskit ล้วน
         if engine:
             self.engine = engine
         else:
@@ -38,12 +38,12 @@ class ProductionPipeline:
         """
         logger.info(f"Executing Production Pipeline for model: {self.model.__class__.__name__}")
 
-        # 1. Build the circuit structure
+        # 1. สร้างวงจร (Build the circuit structure)
         qc, params, last_qubit = self.model.build_with_metadata()
 
         logger.info(f"Circuit built. Num Qubits: {qc.num_qubits}, Num Params: {len(params)}")
 
-        # 2. Delegate to Engine
+        # 2. เรียกใช้ฟังก์เทรนของ model ที่เลือก (Delegate to Engine)
         score, history, trained_obj = self.engine.fit(
             circuit=qc,
             params=params,

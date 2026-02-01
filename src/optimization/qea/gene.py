@@ -3,24 +3,24 @@ import numpy as np
 
 class QuantumGene:
     """
-    Represents a single Quantum Gene in a QEA.
-    A gene is represented as a qubit (alpha|0> + beta|1>).
+    2 gene แทน 1 gate (alpha|0> + beta|1>)
+    และทำหน้าที่หมุนมุม update ตามตาราง.
     """
 
     def __init__(self) -> None:
-        # Start at pi/4 (Uniform Superposition)
+        # เริ่มที่มุม pi/4 (Uniform Superposition)
         self.theta: float = np.pi / 4
         self.alpha: float = 0.0
         self.beta: float = 0.0
         self.update_amplitudes()
 
     def update_amplitudes(self) -> None:
-        # Calculate alpha, beta amplitudes from theta
+        # คำนวณมุม alpha, beta ใหม่จาก theta
         self.alpha = float(np.cos(self.theta))
         self.beta = float(np.sin(self.theta))
 
     def observe(self) -> int:
-        # Measure result from chromosome alpha|0> + beta|1>
+         # วัดผลลัพธ์จากโครโมโซม alpha|0> + beta|1>
         prob_1 = self.beta**2
         return 1 if np.random.rand() < prob_1 else 0
 
@@ -32,14 +32,15 @@ class QuantumGene:
         fitness_best: float,
     ) -> None:
         """
-        Rotate the state towards the target based on the QEA lookup table.
+        หมุนมุม theta ของ gene เข้าหาตัวเก่ง ตามตาราง 1 
         """
+        # F>=Fbest ?
         is_current_F_better = fitness_current >= fitness_best
 
         d_theta = 0.0
         sign = 0
         delta = 0.03 * np.pi
-        eps = 1e-6
+        eps = 1e-6 # ดักกรณีใกล้ศูนย์มากๆ
 
         # QEA Rotation Table
         if current_bit == 0 and best_bit == 0:
@@ -89,7 +90,9 @@ class QuantumGene:
             elif self.alpha * self.beta < 0:
                 sign = -1
 
-        # Apply rotation
+        # ปรับมุม theta
         self.theta += sign * d_theta
+        # ทำให้อยู่ในช่วง 0 - 2pi เพื่อไม่ให้ยิ่งหมุนยิ่งเกิน
         self.theta = self.theta % (2 * np.pi)
+        # ***************************************
         self.update_amplitudes()

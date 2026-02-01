@@ -18,6 +18,7 @@ class BaseQCNN(ABC):
     def build(self, *args, **kwargs) -> Tuple[QuantumCircuit, ParameterVector]:
         """
         Build and return the full quantum circuit and its parameters.
+        ใช้ตอน
         """
         pass
 
@@ -25,6 +26,7 @@ class BaseQCNN(ABC):
     def build_with_metadata(self, *args, **kwargs) -> Tuple[QuantumCircuit, ParameterVector, int]:
         """
         Build and return (circuit, parameters, last_surviving_qubit).
+        ใช้ตอน train model
         """
         pass
 

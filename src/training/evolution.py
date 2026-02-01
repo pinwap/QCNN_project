@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class EvolutionarySearch:
     """
+    ทำ QEA เพื่อหาโครงสร้าง QCNN ที่ดีที่สุด
     Orchestrates the Evolutionary Algorithm for Quantum Architecture Search.
     Manages the population, evolution steps, and evaluation strategies.
     """

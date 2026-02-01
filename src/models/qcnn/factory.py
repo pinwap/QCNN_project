@@ -9,6 +9,7 @@ QCNN_REGISTRY: Dict[str, Type[BaseQCNN]] = {
     "evolutionary": EvolutionaryQCNN,
 }
 
+# บอกโรงงานว่าอยากสร้าง QCNN แบบไหน เดะไปแกะใน dict ให้ว่ามันคืออันไหน จะได้ไปบอก constructor ถูก 
 
 def resolve_qcnn(name: str, **kwargs) -> BaseQCNN:
     """

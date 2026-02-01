@@ -11,6 +11,7 @@ class StandardQCNN(BaseQCNN):
     """
     Standard QCNN implementation with fixed unitary structures.
     Based on the qiskitQCNN implementation.
+    โครงสร้าง QCNN ของ qiskit - Cong Iris et al. 
     """
 
     def _conv_block(self) -> QuantumCircuit:

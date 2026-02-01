@@ -16,7 +16,7 @@ class AngleEncodingMap(FeatureMapBuilder):
 
     def build(self, n_qubits: int) -> Tuple[QuantumCircuit, ParameterVector]:
         circuit = QuantumCircuit(n_qubits)
-        inputs = ParameterVector(self.param_prefix, n_qubits)
+        inputs = ParameterVector(self.param_prefix, n_qubits) # สร้างพารามิเตอร์เวกเตอร์ ชื่อ x จำนวน n_qubits
         for i in range(n_qubits):
             circuit.rx(inputs[i] * self.scale, i)
         return circuit, inputs

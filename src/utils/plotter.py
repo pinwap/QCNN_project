@@ -31,6 +31,7 @@ def plot_fitness_history(
     plt.grid(True)
     plt.savefig(save_path)
     plt.close()
+    
 def plot_training_metrics(
     history: dict,
     save_dir: str,
@@ -44,7 +45,7 @@ def plot_training_metrics(
     if not epochs:
         return
 
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    fig, ax1 = plt.subplots(figsize=(10, 6)) 
 
     # --- Plot Loss (Left Axis) ---
     color_loss = "tab:red"
