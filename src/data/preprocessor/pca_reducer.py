@@ -8,6 +8,7 @@ class PCAReducer(BasePreprocessor):
         self.target_dim = target_dim
         
     def MinMaxScale(self, data: Tensor) -> Tensor:
+        # ทำค่าให้อยู่ในช่วง [0, 1]
         min_val = data.min(dim=1, keepdim=True)[0]
         max_val = data.max(dim=1, keepdim=True)[0]
         range_val = max_val - min_val
@@ -27,4 +28,4 @@ class PCAReducer(BasePreprocessor):
         # Transform the data to the new principal components space
         projected = torch.matmul(flat - flat.mean(dim=0), vh[:, : self.target_dim])
         
-        return self.MinMaxScale(projected)
+        return self.MinMaxScale(projected) #คืนค่าเป็น Tensor ที่ถูกลดมิติแล้ว ex [0.1, 0.5, 0.8, 0.2]

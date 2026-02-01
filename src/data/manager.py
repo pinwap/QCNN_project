@@ -27,7 +27,7 @@ class DataManager:
         )
 
         if preprocessors:
-            self.preprocessors = resolve_preprocessors(preprocessors)
+            self.preprocessors = resolve_preprocessors(preprocessors, dataset_name=dataset_name)
         else:
             self.preprocessors = []
 

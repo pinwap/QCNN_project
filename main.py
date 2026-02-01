@@ -40,7 +40,6 @@ Main entry point for executing training and evolutionary search tasks.
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg: DictConfig):
     # 0. Initialize Old-School Logging Directory
-    # 0. Initialize Old-School Logging Directory
     # cfg.task is now a DictConfig (loaded from yaml), so specific name is in cfg.task_name
     task_name_str = cfg.get("task_name", "unknown_task")
 
