@@ -159,7 +159,6 @@ class AutoencoderReducer(BasePreprocessor):
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
-<<<<<<< Updated upstream
 
             avg_loss = total_loss / len(train_loader)
             train_history.append(avg_loss)
@@ -184,15 +183,6 @@ class AutoencoderReducer(BasePreprocessor):
                     msg += f", Val Loss: {val_history[-1]:.4f}"
                 logger.info(msg)
 
-=======
-
-            avg_loss = total_loss / len(dataloader)
-            loss_history.append(avg_loss)
-
-            if (epoch + 1) % 5 == 0 or epoch == 0:
-                logger.info(f"  ConvAE Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
-
->>>>>>> Stashed changes
         # Plot Loss History
         plot_path = os.path.join(self.plot_dir, f"conv_ae_{self.dataset_name}_{self.target_dim}_loss.png")
         plot_train_val_loss(
