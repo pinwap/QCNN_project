@@ -6,3 +6,7 @@ digits: [0, 2]
 preprocessors: ["autoencoder_16"]
 train_lr: 0.01
 feature_map_type: angle
+
+
+# uv run main.py --config-name fashionmnist_02_ae 
+# train_lr=0.05 train_epochs=100 scheduler_patience=3
