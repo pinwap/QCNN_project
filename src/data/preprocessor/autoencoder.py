@@ -3,8 +3,9 @@ import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
-from utils.plotter import plot_loss_history
+from torch.utils.data import DataLoader, TensorDataset, random_split
+
+from utils.plotter import plot_train_val_loss
 from .base import BasePreprocessor
 
 logger = logging.getLogger(__name__)
@@ -101,16 +102,37 @@ class AutoencoderReducer(BasePreprocessor):
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
         dataset = TensorDataset(flat_data, flat_data)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        
+        val_size = max(int(len(dataset) * 0.2), 1)
+        if val_size >= len(dataset):
+            val_size = max(len(dataset) - 1, 0)
+        train_size = len(dataset) - val_size
+
+        if train_size <= 0:
+            train_dataset = dataset
+            val_dataset = None
+        else:
+            generator = torch.Generator().manual_seed(42)
+            train_dataset, val_dataset = random_split(
+                dataset, [train_size, val_size], generator=generator
+            )
+
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        val_loader = (
+            DataLoader(val_dataset, batch_size=self.batch_size)
+            if val_dataset is not None and val_size > 0
+            else None
+        )
 
         logger.info(f"Training ConvAutoencoder (Input: {input_dim} -> Latent: {self.target_dim}) for {self.epochs} epochs on {device}...")
         
         self.model.train()
-        loss_history = []
+        train_history = []
+        val_history = []
 
         for epoch in range(self.epochs):
             total_loss = 0.0
-            for batch_x, _ in dataloader:
+            for batch_x, _ in train_loader:
                 # แปลงร่างข้อมูลก่อนเข้า Model จาก [Batch, 784] -> [Batch, 1, 28, 28]
                 img_batch = batch_x.view(-1, 1, 28, 28)
                 optimizer.zero_grad()
@@ -120,18 +142,36 @@ class AutoencoderReducer(BasePreprocessor):
                 optimizer.step()
                 total_loss += loss.item()
             
-            avg_loss = total_loss / len(dataloader)
-            loss_history.append(avg_loss)
+            avg_loss = total_loss / len(train_loader)
+            train_history.append(avg_loss)
+
+            if val_loader is not None:
+                self.model.eval()
+                with torch.no_grad():
+                    val_total = 0.0
+                    for batch_x, _ in val_loader:
+                        img_batch = batch_x.view(-1, 1, 28, 28)
+                        _, decoded = self.model(img_batch)
+                        val_total += criterion(decoded, img_batch).item()
+                val_avg = val_total / len(val_loader)
+                val_history.append(val_avg)
+                self.model.train()
+            else:
+                val_history.append(None)
 
             if (epoch + 1) % 5 == 0 or epoch == 0:
-                logger.info(f"  ConvAE Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
+                msg = f"  ConvAE Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}"
+                if val_history[-1] is not None:
+                    msg += f", Val Loss: {val_history[-1]:.4f}"
+                logger.info(msg)
         
         # Plot Loss History
         plot_path = os.path.join(self.plot_dir, f"conv_ae_{self.dataset_name}_{self.target_dim}_loss.png")
-        plot_loss_history(
-            history=loss_history,
+        plot_train_val_loss(
+            train_history=train_history,
+            val_history=val_history if any(v is not None for v in val_history) else None,
             save_path=plot_path,
-            title=f"ConvAutoencoder Training Loss ({self.dataset_name}, Dim={self.target_dim})"
+            title=f"Autoencoder Train vs Val Loss ({self.dataset_name}, Dim={self.target_dim})"
         )
         logger.info(f"Training plot saved to: {plot_path}")
 

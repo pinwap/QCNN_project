@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 from matplotlib import pyplot as plt
 
@@ -94,4 +94,37 @@ def plot_training_metrics(
 
     # Save combined plot
     plt.savefig(f"{save_dir}/{file_id}_metrics.png")
+    plt.close()
+
+
+def plot_train_val_loss(
+    train_history: Sequence[float],
+    val_history: Sequence[float] | None,
+    save_path: str,
+    title: str = "Training vs Validation Loss",
+):
+    if not train_history:
+        return
+
+    epochs = range(1, len(train_history) + 1)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, train_history, marker="o", color="tab:blue", label="Train Loss")
+
+    if val_history:
+        plt.plot(
+            range(1, len(val_history) + 1),
+            val_history,
+            marker="s",
+            linestyle="--",
+            color="tab:orange",
+            label="Val Loss",
+        )
+
+    plt.title(title)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(save_path)
     plt.close()
