@@ -55,7 +55,13 @@ class EvolutionarySearch:
         Execute the evolutionary optimization loop.
         """
         # 1. Prepare Data
-        x_train, y_train, x_test, y_test = self.data_manager.get_data()
+        data_tuple = self.data_manager.get_data()
+
+        x_val, y_val = None, None
+        if len(data_tuple) == 6:
+            x_train, x_val, x_test, y_train, y_val, y_test = data_tuple
+        else:
+            x_train, x_test, y_train, y_test = data_tuple
 
         if x_train is None:
             logger.error("Data loading failed. Experiment cannot proceed.")
@@ -78,7 +84,9 @@ class EvolutionarySearch:
                 struct_code = chromo.collapse()
 
                 # B. Call the Evaluation Strategy
-                acc, model_state = self.strategy.evaluate(struct_code, x_train, y_train, x_test, y_test)
+                acc, model_state = self.strategy.evaluate(
+                    struct_code, x_train, y_train, x_test, y_test, x_val, y_val
+                )
                 chromo.fitness = acc
                 chromo.best_model_state = model_state
 

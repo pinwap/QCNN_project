@@ -20,6 +20,8 @@ class BaseEngine(ABC):
         last_qubit: int,
         x_train: torch.Tensor,
         y_train: torch.Tensor,
+        x_val: Optional[torch.Tensor] = None,
+        y_val: Optional[torch.Tensor] = None,
         x_test: Optional[torch.Tensor] = None,
         y_test: Optional[torch.Tensor] = None,
         initial_state_dict: Optional[dict] = None,

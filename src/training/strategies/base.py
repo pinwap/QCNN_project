@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import torch
 
@@ -18,6 +18,8 @@ class EvaluationStrategy(ABC):
         y_train: torch.Tensor,
         x_test: torch.Tensor,
         y_test: torch.Tensor,
+        x_val: Optional[torch.Tensor] = None,
+        y_val: Optional[torch.Tensor] = None,
     ) -> Tuple[float, Any]:
         """
         Evaluate a model structure and return its fitness score and trained model state.

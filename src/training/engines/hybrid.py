@@ -33,6 +33,9 @@ class HybridEngine(BaseEngine):
         gradient_method: str = "param_shift",
         device: Optional[str] = None,
         use_v2_primitives: bool = True,
+        use_scheduler: bool = True,
+        scheduler_patience: int = 5,
+        scheduler_factor: float = 0.5,
         verbose: bool = True,
     ):
         self.feature_map_builder = resolve_feature_map(feature_map)
@@ -41,6 +44,9 @@ class HybridEngine(BaseEngine):
         self.gradient_method = gradient_method.lower()
         self.verbose = verbose
         self.use_v2 = use_v2_primitives
+        self.use_scheduler = use_scheduler
+        self.scheduler_patience = scheduler_patience
+        self.scheduler_factor = scheduler_factor
         self.loss_fn = nn.MSELoss()
 
         if device is None:
@@ -94,6 +100,8 @@ class HybridEngine(BaseEngine):
         last_qubit: int,
         x_train: torch.Tensor,
         y_train: torch.Tensor,
+        x_val: Optional[torch.Tensor] = None,
+        y_val: Optional[torch.Tensor] = None,
         x_test: Optional[torch.Tensor] = None,
         y_test: Optional[torch.Tensor] = None,
         initial_state_dict: Optional[dict] = None,
@@ -162,62 +170,101 @@ class HybridEngine(BaseEngine):
                     "If gradients are zero, try 'engine.device=cpu'."
                 )
 
+        scheduler = None
+        if self.use_scheduler:
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                mode="min",
+                factor=self.scheduler_factor,
+                patience=self.scheduler_patience,
+            )
+
         # ย้ายข้อมูลไปยัง device ที่กำหนด (CPU/GPU)
         x_train_dev = x_train.to(self.device)
-        y_train_dev = y_train.to(self.device).unsqueeze(1) # unsqueeze คือการเพิ่มมิติ จาก (N,) เป็น (N,1) y_train เดิมมีรูปร่าง [10] (มี 10 ตัวเลขเรียงกัน) เลยต้องเพิ่มมิติให้เป็น [10,1] เพื่อให้เข้ากับ output ของ model ที่มีรูปร่าง (N, 1)
+        y_train_dev = y_train.to(self.device).unsqueeze(1)
+
+        # Prepare validation data if provided
+        x_val_dev = None
+        y_val_dev = None
+        if x_val is not None and y_val is not None:
+             x_val_dev = x_val.to(self.device)
+             y_val_dev = y_val.to(self.device).unsqueeze(1)
 
         """
         3. เข้าโหมดการเทรน
         """
-        history = {"loss": [], "train_acc": []}
-        model.train()
+        history = {"loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+
         for epoch in range(self.epochs):
+            model.train()
             optimizer.zero_grad()
             output = model(x_train_dev)
             loss = self.loss_fn(output, y_train_dev)
-            loss.backward() # คำนวณ gradient ผ่าน backpropagation ว่าควรขยับไปทางไหน
+            loss.backward()
 
-            # Diagnostic: Check gradient magnitude
             total_grad = 0.0
-            for p in model.parameters(): # ตรวจสอบขนาดของ gradient = p.grad = ทิศทางและค่าความชันที่คำนวณได้ในแต่ละพารามิเตอร์
+            for p in model.parameters():
                 if p.grad is not None:
-                    total_grad += p.grad.norm().item() # norm() คือ การหาขนาดความยาวรวมของเวกเตอร์ gradient ว่าต้องเดินไปในทิศทางไหนและมากน้อยแค่ไหน
-                    # ไว้เช็คว่าโมเดลยังเรียนรู้ปกติอยู่ไหม : 
-                    #   - ถ้า total_grad ใกล้ 0 คือไม่มี gradient ให้เรียนรู้ อาจจะเจอปัญหา Barren Plateaus 
-                    #   - แต่ถ้าใหญ่มากๆ อาจะเกิด exploding gradients คือ gradient ใหญ่เกินไปทำให้การอัพเดทพารามิเตอร์ไม่เสถียรโดดไปมาจนพัง
-                    
-            optimizer.step() # เอาค่า gradient ที่คำนวณได้มาคูณกับ learning rate แล้วไปอัพเดท weight พารามิเตอร์ของโมเดล = ก้าวเท้าเดินจริง ๆ
+                    total_grad += p.grad.norm().item()
+
+            optimizer.step()
 
             history["loss"].append(float(loss.item()))
 
             # Calculate Epoch Training Accuracy
-            with torch.no_grad(): # เป็นการบอก PyTorch ว่าในบล็อกนี้ไม่ต้องคำนวณ gradient ช่วยประหยัดหน่วยความจำและเพิ่มความเร็ว
-                # ในบล็อกนี้เราแค่จะ "คำนวณความแม่นยำ (Accuracy)" เพื่อดูผลเฉยๆ ไม่ได้จะเอาไปเทรน (Update Weight) ดังนั้นเราจึงไม่จำเป็นต้องคำนวณ Gradient
+            with torch.no_grad():
                 preds = torch.sign(output)
                 train_acc = (preds == y_train_dev).float().mean().item()
                 history["train_acc"].append(float(train_acc))
 
+            # Validation Step
+            val_loss_scalar = 0.0
+            val_acc = 0.0
+            if x_val_dev is not None and y_val_dev is not None:
+                model.eval()
+                with torch.no_grad():
+                    val_out = model(x_val_dev)
+                    val_loss = self.loss_fn(val_out, y_val_dev)
+                    val_loss_scalar = val_loss.item()
+
+                    val_preds = torch.sign(val_out)
+                    val_acc = (val_preds == y_val_dev).float().mean().item()
+
+                history["val_loss"].append(val_loss_scalar)
+                history["val_acc"].append(val_acc)
+
+                # Step Scheduler
+                if scheduler is not None:
+                    scheduler.step(val_loss_scalar)
+
+                # Retrieve current LR
+                if scheduler is not None and hasattr(scheduler, "get_last_lr"):
+                     current_lr = scheduler.get_last_lr()[0]
+                else:
+                     current_lr = optimizer.param_groups[0]['lr']
+
             if self.verbose:
                 out_mean = output.mean().item()
                 out_std = output.std().item()
-                logger.info(
+                log_msg = (
                     f"Epoch {epoch + 1}/{self.epochs}, Loss: {loss.item():.4f} | "
                     f"Acc: {train_acc:.4f} | "
-                    f"Grad: {total_grad:.2e} | Mean: {out_mean:.3f}, Std: {out_std:.3f}"
+                    f"Grad: {total_grad:.2e} "
                 )
-                
+                if x_val_dev is not None:
+                    log_msg += f"| Val Loss: {val_loss_scalar:.4f} | Val Acc: {val_acc:.4f} | LR: {current_lr:.2e}"
+
+                logger.info(log_msg)
+
         # Evaluate on test set if provided
         if x_test is not None and y_test is not None:
             x_test_dev = x_test.to(self.device)
             y_test_dev = y_test.to(self.device).unsqueeze(1)
-            
-            # บอกโมเดลให้เข้าสู่โหมดสอบ จะปิดการทำงานบางอย่างที่ใช้เฉพาะตอนเทรน เช่น 
-            #   - dropout = ตอนเทรนจะสุ่มปิดเซลล์เพื่อไม่ให้โมเลจำข้อสอบ แต่พอสอบต้องเปิดเพื่อให้ได้ประสิทธิภาพมากที่สุด, 
-            #   - batchnorm จะใช้สถิติของทั้ง batch ในการ normalize ตอนเทรน แต่ตอนสอบจะใช้สถิติที่เรียนรู้มาแล้ว
-            model.eval() 
-            
+
+            model.eval()
+
             with torch.no_grad():
-                preds = torch.sign(model(x_test_dev)) # sign() คือการแปลง output เป็น -1 หรือ 1 จาก model(x) ที่จะได้ค่าเป็นทศนิยม 
+                preds = torch.sign(model(x_test_dev))
                 acc = (preds == y_test_dev).float().mean().item()
             return float(acc), history, model.state_dict()
 

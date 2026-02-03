@@ -44,6 +44,8 @@ class HybridStrategy(EvaluationStrategy):
         y_train: torch.Tensor,
         x_test: torch.Tensor,
         y_test: torch.Tensor,
+        x_val: Optional[torch.Tensor] = None,
+        y_val: Optional[torch.Tensor] = None,
     ) -> Tuple[float, Any]:
         model_builder = EvolutionaryQCNN(self.num_qubits, structure_code) # เป็น object ของ class EvolutionaryQCNN ที่สามารถทำ QEA ได้
         qc, params, last_qubit = model_builder.build_with_metadata() #สร้างวงจร QCNN ตาม structure_code ที่ให้มา
@@ -54,6 +56,8 @@ class HybridStrategy(EvaluationStrategy):
             last_qubit=last_qubit,
             x_train=x_train,
             y_train=y_train,
+            x_val=x_val,
+            y_val=y_val,
             x_test=x_test,
             y_test=y_test,
         )

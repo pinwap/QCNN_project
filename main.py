@@ -73,11 +73,18 @@ def main(cfg: DictConfig):
         data_path=cfg.data_path,
         n_train=cfg.n_train,
         n_test=cfg.n_test,
+        n_val=cfg.get("n_val", 0),
         preprocessors=list(cfg.preprocessors),
         target_dim=cfg.target_dim,
         target_labels=tuple(cfg.digits) if cfg.digits else None,
     )
-    x_train, y_train, x_test, y_test = data_mgr.get_data()
+
+    data_tuple = data_mgr.get_data()
+    x_val, y_val = None, None
+    if len(data_tuple) == 6:
+        x_train, x_val, x_test, y_train, y_val, y_test = data_tuple
+    else:
+        x_train, x_test, y_train, y_test = data_tuple
 
     # 2. Perform Task
     try:
@@ -116,6 +123,9 @@ def main(cfg: DictConfig):
                 lr=cfg.train_lr,
                 gradient_method=cfg.get("gradient_method", "param_shift"),
                 use_v2_primitives=cfg.get("use_v2_primitives", False),
+                use_scheduler=cfg.get("use_scheduler", True),
+                scheduler_patience=cfg.get("scheduler_patience", 5),
+                scheduler_factor=cfg.get("scheduler_factor", 0.5),
                 device=cfg.get("device"),
             )
 
@@ -128,7 +138,9 @@ def main(cfg: DictConfig):
                 num_qubits=cfg.num_qubits,
             )
 
-            results = auto_pipeline.run(x_train, y_train, x_test, y_test)
+            results = auto_pipeline.run(
+                x_train, y_train, x_test, y_test, x_val, y_val
+            )
             final_score, history_list, trained_model, best_chromo, evolution_history = results
 
             # Save Combined Results
@@ -228,6 +240,9 @@ def main(cfg: DictConfig):
                     lr=cfg.train_lr,
                     gradient_method=cfg.get("gradient_method", "param_shift"),
                     use_v2_primitives=cfg.get("use_v2_primitives", False),
+                    use_scheduler=cfg.get("use_scheduler", True),
+                    scheduler_patience=cfg.get("scheduler_patience", 5),
+                    scheduler_factor=cfg.get("scheduler_factor", 0.5),
                     device=cfg.get("device"),
                 )
             else:
@@ -267,7 +282,7 @@ def main(cfg: DictConfig):
 
             pipeline = ProductionPipeline(model=model, engine=engine)
             final_score, history_list, trained_model = pipeline.run(
-                x_train, y_train, x_test, y_test
+                x_train, y_train, x_test, y_test, x_val, y_val
             )
 
             # Save Results

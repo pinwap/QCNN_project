@@ -5,11 +5,12 @@ model_type: standard #{ Options: standard, evolutionary_qcnn }
 # Dataset parameters
 dataset_name: mnist #{ Options: mnist, fashion_mnist, custom_dataset }
 data_path: "./data"
-n_train: 400
-n_test: 100
+n_train: 200
+n_test: 50
+n_val: 50
 digits: [3, 6]
 target_dim: 16
-preprocessors: ["pca_16", "flatten"] 
+preprocessors: ["pca_16", "flatten"]
 
 # Evolution parameters
 n_pop: 20
@@ -19,14 +20,17 @@ mutation_rate: 0.1
 
 # Engine parameters (Training)
 engine_type: hybrid #{ Options: hybrid, qiskit }
-train_epochs: 50
-train_lr: 0.001
-gradient_method: spsa 
+train_epochs: 40
+train_lr: 0.01
+gradient_method: spsa
 device: null
 use_v2_primitives: true
+use_scheduler: true
+scheduler_patience: 5
+scheduler_factor: 0.5
 
 # Strategy parameters (Evolution Evaluation)
-strategy_type: hybrid 
+strategy_type: hybrid
 eval_epochs: 5
 eval_lr: 0.01
 eval_max_iter: 50

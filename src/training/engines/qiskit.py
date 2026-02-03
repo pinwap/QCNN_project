@@ -56,12 +56,15 @@ class QiskitEngine(BaseEngine):
         last_qubit: int,
         x_train: torch.Tensor,
         y_train: torch.Tensor,
+        x_val: Optional[torch.Tensor] = None,
+        y_val: Optional[torch.Tensor] = None,
         x_test: Optional[torch.Tensor] = None,
         y_test: Optional[torch.Tensor] = None,
+        initial_state_dict: Optional[dict] = None,
     ) -> Tuple[float, dict, Any]:
         num_qubits = circuit.num_qubits
-        
-        # สร้างวงจร = feature map + ต่อกับ quantum circuit + ปิดท้ายด้วย observable ตัวหาค่า <Z> บนคิวบิตสุดท้าย 
+
+        # สร้างวงจร = feature map + ต่อกับ quantum circuit + ปิดท้ายด้วย observable ตัวหาค่า <Z> บนคิวบิตสุดท้าย
         fm, input_params = self.feature_map_builder.build(num_qubits)
 
         composed = fm.compose(circuit)
@@ -95,14 +98,14 @@ class QiskitEngine(BaseEngine):
                         f"Qiskit Optimization Iteration {len(history['loss'])}/{self.max_iter} "
                         f"- Loss: {loss:.4f}"
                     )
-                    
+
         # เราไม่ได้เขียน loop เทรนเอง แต่ใช้ classifier.fit() ของ qiksit แทน
         classifier = NeuralNetworkClassifier(
             qnn,
-            optimizer=ADAM(maxiter=self.max_iter), 
+            optimizer=ADAM(maxiter=self.max_iter),
             callback=callback, # เลยต้องใส่ฟังก์ชัน callback บอก qiskit ว่าฝากเพื่อเก็บประวัติ loss ให้หน่อย
         )
-        
+
         # แปลงข้อมูลจาก torch.Tensor เป็น numpy.ndarray เพื่อให้ qiskit อ่านออก
         X_train_np = x_train.cpu().numpy()
         y_train_np = y_train.cpu().numpy()

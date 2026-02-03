@@ -1,0 +1,8 @@
+defaults:
+  - config
+task_name: train
+dataset_name: mnist
+digits: [3, 8]
+preprocessors: ["pca_16"]
+train_lr: 0.01
+feature_map_type: angle

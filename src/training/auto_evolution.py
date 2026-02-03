@@ -26,7 +26,7 @@ class AutoEvolutionPipeline:
         self.production_engine = production_engine
         self.num_qubits = num_qubits
 
-    def run(self, x_train, y_train, x_test=None, y_test=None):
+    def run(self, x_train, y_train, x_test=None, y_test=None, x_val=None, y_val=None):
         """
         Executes Phase 1 (Evolution) and Phase 2 (Retraining).
         """
@@ -75,7 +75,7 @@ class AutoEvolutionPipeline:
 
         logger.info(f"PHASE 2: Transferring weights from best individual (if available)...")
         final_score, training_history, trained_obj = production_pipeline.run(
-            x_train, y_train, x_test, y_test, initial_state_dict=initial_state
+            x_train, y_train, x_test, y_test, x_val=x_val, y_val=y_val, initial_state_dict=initial_state
         )
 
         logger.info(f"Auto-Evolution Workflow Complete. Final Retrained Score: {final_score:.4f}")

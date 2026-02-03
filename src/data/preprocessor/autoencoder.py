@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-from src.utils.plotter import plot_loss_history
+from utils.plotter import plot_loss_history
 from .base import BasePreprocessor
 
 logger = logging.getLogger(__name__)

@@ -18,12 +18,13 @@ class DataManager:
         data_path: str = "./data",
         n_train: int = 400,
         n_test: int = 100,
+        n_val: int = 0,
         preprocessors: Optional[List[str]] = None,
         target_dim: Optional[int] = None,
         **kwargs,
     ):
         self.dataset = resolve_dataset(
-            dataset_name, data_dir=data_path, n_train=n_train, n_test=n_test, **kwargs
+            dataset_name, data_dir=data_path, n_train=n_train, n_test=n_test, n_val=n_val, **kwargs
         )
 
         if preprocessors:
@@ -45,7 +46,22 @@ class DataManager:
         for p in self.preprocessors:
             data = p(data)
 
-        x_train, x_test, y_train, y_test = self.dataset.split(data, labels)
+        split_result = self.dataset.split(data, labels)
+
+        if len(split_result) == 6:
+            x_train, x_val, x_test, y_train, y_val, y_test = split_result
+            if as_numpy:
+                return (
+                    x_train.numpy(),
+                    x_val.numpy(),
+                    x_test.numpy(),
+                    y_train.numpy(),
+                    y_val.numpy(),
+                    y_test.numpy(),
+                )
+            return x_train, x_val, x_test, y_train, y_val, y_test
+
+        x_train, x_test, y_train, y_test = split_result
 
         if as_numpy:
             return x_train.numpy(), y_train.numpy(), x_test.numpy(), y_test.numpy()
