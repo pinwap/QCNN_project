@@ -16,41 +16,51 @@ class ConvAutoencoderModel(nn.Module):
         # Encoder
         self.encoder = nn.Sequential(
             # Layer 1: 28x28 -> 14x14
-            nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1), 
-            nn.ReLU(),
-            
+            nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(16),
+            nn.LeakyReLU(0.2),
+
             # Layer 2: 14x14 -> 7x7
             nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
-            
-            # Flatten: เตรียมย่อเป็น Vector เพื่อเข้า Quantum
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(0.2),
+
+            # Flatten: 32*7*7 = 1568
             nn.Flatten(),
-            
-            # Bottleneck: ย่อเหลือ 16 ตัวเลข (หรือตาม encoding_dim)
-            # ต้องมี Sigmoid เพื่อ Angle Encoding (0...1)
-            nn.Linear(32 * 7 * 7, encoding_dim),  # Bottleneck
-            nn.Sigmoid() # Force latent variables to [0, 1] for Angle Encoding compatibility
+
+            # Partial reduction before bottleneck
+            nn.Linear(32 * 7 * 7, 128),
+            nn.ReLU(),
+
+            # Bottleneck
+            nn.Linear(128, encoding_dim),
+            nn.Sigmoid() # Force latent variables to [0, 1] for Angle Encoding
         )
-        # Decoder
-        # ขยายกลับจาก Vector -> ภาพ จะได้เข้า ConvTranspose2d ที่รับเป็นภาพได้
-        self.decoder_input = nn.Linear(encoding_dim, 32 * 7 * 7)
-        
+
+        # Decoder Input
+        self.decoder_input = nn.Sequential(
+            nn.Linear(encoding_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, 32 * 7 * 7),
+            nn.ReLU()
+        )
+
+        # Decoder CNN
         self.decoder = nn.Sequential(
-            # Reshape กลับเป็น 3D: (32, 7, 7) ต้องทำใน forward
-            
             # Layer 1: 7x7 -> 14x14
             nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.BatchNorm2d(16),
             nn.ReLU(),
-            
+
             # Layer 2: 14x14 -> 28x28
             nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.Sigmoid()  # Output range [0, 1] assuming input images are normalized
+            nn.Sigmoid()  # Output range [0, 1]
         )
 
     def forward(self, x):
         encoded = self.encoder(x)
         x = self.decoder_input(encoded)
-        x = x.view(-1, 32, 7, 7) # Reshape กลับเป็นทรงกล่องสี่เหลี่ยม
+        x = x.view(-1, 32, 7, 7) # Reshape back to feature map
         decoded = self.decoder(x)
         return encoded, decoded
 
@@ -78,12 +88,20 @@ class AutoencoderReducer(BasePreprocessor):
 
     def _train(self, flat_data: torch.Tensor):
         input_dim = flat_data.shape[1]
-        
+
         # Initialize model
         self.model = ConvAutoencoderModel(input_dim, self.target_dim)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Determine device: MPS (Apple Silicon) -> CUDA -> CPU
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            device = torch.device("mps")
+        elif torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+
         self.model.to(device)
-        
+
         # Check if saved model exists
         if os.path.exists(self.model_path):
             logger.info(f"Loading pre-trained Autoencoder from: {self.model_path}")
@@ -102,7 +120,7 @@ class AutoencoderReducer(BasePreprocessor):
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
         dataset = TensorDataset(flat_data, flat_data)
-        
+
         val_size = max(int(len(dataset) * 0.2), 1)
         if val_size >= len(dataset):
             val_size = max(len(dataset) - 1, 0)
@@ -125,7 +143,7 @@ class AutoencoderReducer(BasePreprocessor):
         )
 
         logger.info(f"Training ConvAutoencoder (Input: {input_dim} -> Latent: {self.target_dim}) for {self.epochs} epochs on {device}...")
-        
+
         self.model.train()
         train_history = []
         val_history = []
@@ -141,7 +159,8 @@ class AutoencoderReducer(BasePreprocessor):
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
-            
+<<<<<<< Updated upstream
+
             avg_loss = total_loss / len(train_loader)
             train_history.append(avg_loss)
 
@@ -164,7 +183,16 @@ class AutoencoderReducer(BasePreprocessor):
                 if val_history[-1] is not None:
                     msg += f", Val Loss: {val_history[-1]:.4f}"
                 logger.info(msg)
-        
+
+=======
+
+            avg_loss = total_loss / len(dataloader)
+            loss_history.append(avg_loss)
+
+            if (epoch + 1) % 5 == 0 or epoch == 0:
+                logger.info(f"  ConvAE Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
+
+>>>>>>> Stashed changes
         # Plot Loss History
         plot_path = os.path.join(self.plot_dir, f"conv_ae_{self.dataset_name}_{self.target_dim}_loss.png")
         plot_train_val_loss(
@@ -188,22 +216,22 @@ class AutoencoderReducer(BasePreprocessor):
         """
         # Flatten input: (N, H, W) or (N, C, H, W) -> (N, Features)
         flat_data = data.view(data.shape[0], -1)
-        
+
         # If model is not trained yet, train it on this data
         if self.model is None:
             self._train(flat_data)
-        
+
         # Transform data using Encoder
         device = next(self.model.parameters()).device
         flat_data_dev = flat_data.to(device)
-        
+
         img_data = flat_data_dev.view(-1, 1, 28, 28)
-        
+
         self.model.eval()
         with torch.no_grad():
             encoded, _ = self.model(img_data)
-        
+
         encoded = encoded.cpu()
-        
+
         # Sigmoid activation in Encoder already ensures [0, 1] range.
         return encoded
