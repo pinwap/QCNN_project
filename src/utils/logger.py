@@ -30,10 +30,8 @@ def initialize_output_dir(
     file_id = f"{script_name}_{fm_name}_{p_name}_{timestamp}"
 
     # กำหนด path ของโฟลเดอร์ที่จะบันทึกผลลัพธ์
-    if override_output_dir:
-        save_dir = override_output_dir
-    else:
-        save_dir = os.path.join(base_output_dir, file_id)
+    base_dir = override_output_dir if override_output_dir else base_output_dir
+    save_dir = os.path.join(base_dir, file_id)
     plots_dir = os.path.join(save_dir, "plots") #อยู่ใน ^
     model_dir = os.path.join(save_dir, "model")
 
