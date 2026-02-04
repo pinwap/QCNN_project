@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 
 import torch
 
-logger = logging.getLogger(__name__) #__name__ เป็นชื่อไฟล์นี้ เวลารันจะได้รู้ว่า log มาจากไฟล์ไหน 
+logger = logging.getLogger(__name__) #__name__ เป็นชื่อไฟล์นี้ เวลารันจะได้รู้ว่า log มาจากไฟล์ไหน
 
 # ตั้งค่าการ log ว่าจะเขียนยังไง บันทึกลงที่ไหน
 def initialize_output_dir(
@@ -14,6 +14,7 @@ def initialize_output_dir(
     base_output_dir: str = "outputs",
     preprocessor_name: str = "",
     feature_map_name: str = "",
+    override_output_dir: Optional[str] = None,
 ):
     """
     Creates the standardized output directory structure.
@@ -29,7 +30,10 @@ def initialize_output_dir(
     file_id = f"{script_name}_{fm_name}_{p_name}_{timestamp}"
 
     # กำหนด path ของโฟลเดอร์ที่จะบันทึกผลลัพธ์
-    save_dir = os.path.join(base_output_dir, file_id)
+    if override_output_dir:
+        save_dir = override_output_dir
+    else:
+        save_dir = os.path.join(base_output_dir, file_id)
     plots_dir = os.path.join(save_dir, "plots") #อยู่ใน ^
     model_dir = os.path.join(save_dir, "model")
 
@@ -90,7 +94,7 @@ def save_experiment_data(
     # เปิดไฟล์เพื่อเขียนข้อมูล JSON
     with open(data_filename, "w") as f:
         json.dump(output_data, f, indent=4) # indent คือจัดย่อหน้าสวยๆ
-        
+
     # 2. Save raw history text
     plots_dir = os.path.join(save_dir, "plots")
     history_txt = os.path.join(plots_dir, f"{file_id}_history.txt")

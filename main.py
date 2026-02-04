@@ -54,6 +54,7 @@ def main(cfg: DictConfig):
         base_output_dir=cfg.save_dir,
         preprocessor_name=prep_name,
         feature_map_name=fm_name,
+        override_output_dir=cfg.get("output_dir"),
     )
 
     # 0.5 Filter configuration for privacy/clarity
