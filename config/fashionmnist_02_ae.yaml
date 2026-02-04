@@ -1,4 +1,5 @@
 defaults:
+  - __self__
   - config
 task_name: train
 dataset_name: fashionmnist

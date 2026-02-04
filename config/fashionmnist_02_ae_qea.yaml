@@ -1,0 +1,14 @@
+defaults:
+  - config
+task_name: auto_evolution
+model_type: evolutionary_qcnn
+dataset_name: fashionmnist
+digits: [0, 2]
+preprocessors: ["autoencoder_16"]
+feature_map_type: angle
+train_epochs: 1
+train_lr: 0.05
+scheduler_patience: 3
+n_pop: 2
+n_gen: 2
+eval_epochs: 1
