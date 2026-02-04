@@ -70,7 +70,8 @@ hydra:
     handlers:
       file:
         class: logging.FileHandler
-        filename: /dev/null
+        # filename: /dev/null # For Linux/Mac
+        filename: NUL # For Windows
       console:
         class: logging.StreamHandler
         formatter: simple
