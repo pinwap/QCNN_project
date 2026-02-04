@@ -6,9 +6,9 @@ dataset_name: fashionmnist
 digits: [0, 2]
 preprocessors: ["autoencoder_16"]
 feature_map_type: angle
-train_epochs: 1
+train_epochs: 100
 train_lr: 0.05
 scheduler_patience: 3
-n_pop: 2
-n_gen: 2
-eval_epochs: 1
+n_pop: 10
+n_gen: 20
+eval_epochs: 5
