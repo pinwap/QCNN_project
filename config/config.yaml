@@ -47,7 +47,7 @@ output_dir: null
 
 # แจ้งเตือนเข้า Line
 notifications:
-  enabled: false
+  enabled: true
   title: "QCNN Training"
 
 # คำสั่งว่าไม่ต้องสร้างโฟลเดอร์ย่อยของ Hydra สำหรับบันทึกคำสั่งแต่ละรัน
