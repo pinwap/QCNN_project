@@ -43,7 +43,7 @@ num_qubits: 16
 verbose: true
 seed: 42
 save_dir: "./output"
-output_dir: null
+output_dir: "./output"
 
 # แจ้งเตือนเข้า Line
 notifications:

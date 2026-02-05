@@ -6,3 +6,6 @@ digits: [6, 9]
 preprocessors: ["autoencoder_16"]
 train_lr: 0.01
 feature_map_type: angle
+n_train: 1000
+n_test: 200
+n_val: 200
