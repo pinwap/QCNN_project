@@ -111,6 +111,7 @@ class HybridEngine(BaseEngine):
 
     def _load_checkpoint(self, checkpoint_path: str, model: Any, optimizer: Any, scheduler: Optional[Any] = None) -> Tuple[int, dict]:
         if not os.path.exists(checkpoint_path):
+            logger.info(f"HybridEngine: No checkpoint found at {checkpoint_path}. Starting fresh.")
             return 0, {}
 
         logger.info(f"HybridEngine: Found checkpoint at {checkpoint_path}. Resuming...")

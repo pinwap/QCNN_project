@@ -49,15 +49,26 @@ def main(cfg: DictConfig):
     prep_list = list(cfg.preprocessors)
     prep_name = prep_list[0] if prep_list else "raw"
 
-    save_dir, file_id = initialize_output_dir(
-        task_name_str,
-        base_output_dir=cfg.save_dir,
-        preprocessor_name=prep_name,
-        feature_map_name=fm_name,
-        override_output_dir=cfg.get("output_dir"),
-    )
+    # Check if resuming from an existing directory
+    if cfg.get("resume_dir"):
+        save_dir = cfg.resume_dir
+        # Assumes the folder name IS the file_id (which is true based on initialize_output_dir logic)
+        file_id = os.path.basename(os.path.normpath(save_dir)) 
+        #normalizepath = จัดการ path ให้ถูกต้องตาม os นั้นๆ เปลี่ยน \ -> / ใน windows ตัด /ตัวท้ายออก
+        # basename = ดึงชื่อไฟล์หลัง / สุดท้ายออกมา
+        logger.info(f"Resuming experiment from existing directory: {save_dir}")
+        logger.info(f"inferred file_id: {file_id}")
+    else:
+        save_dir, file_id = initialize_output_dir(
+            task_name_str,
+            base_output_dir=cfg.save_dir,
+            preprocessor_name=prep_name,
+            feature_map_name=fm_name,
+            override_output_dir=cfg.get("output_dir"),
+        )
 
     # 0.5 Filter configuration for privacy/clarity
+
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     if isinstance(config_dict, dict):
         if task_name_str == "evolution":
