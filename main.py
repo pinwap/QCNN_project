@@ -171,11 +171,14 @@ def main(cfg: DictConfig):
                 file_id=f"{file_id}_phase2_retrain",
                 config=config_dict,
             )
+            dataset_info = f"{cfg.n_train} {cfg.get('n_val', 0)}"
+            plot_title = f"AutoEvolution - {prep_name} - {fm_name} - {dataset_info}"
             plot_training_metrics(
                 history=history_list,
                 save_dir=os.path.join(save_dir, "plots"),
                 file_id=f"{file_id}_phase2",
                 final_score=final_score,
+                title=plot_title,
             )
             save_model(trained_model, save_dir, file_id, name="retrained_qcnn")
 
@@ -295,11 +298,14 @@ def main(cfg: DictConfig):
                 file_id=file_id,
                 config=config_dict,
             )
+            dataset_info = f"{cfg.n_train} {cfg.get('n_val', 0)}"
+            plot_title = f"{cfg.model_type} - {prep_name} - {fm_name} - {dataset_info}"
             plot_training_metrics(
                 history=history_list,
                 save_dir=os.path.join(save_dir, "plots"),
                 file_id=file_id,
                 final_score=final_score,
+                title=plot_title,
             )
             save_model(trained_model, save_dir, file_id, name="trained_qcnn")
 

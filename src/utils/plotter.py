@@ -37,6 +37,7 @@ def plot_training_metrics(
     save_dir: str,
     file_id: str,
     final_score: float = 0.0,
+    title: str = "Training Metrics"
 ):
     """
     Plots Loss (Train/Val) and Accuracy (Train/Val) on a single graph using dual Y-axes.
@@ -89,7 +90,7 @@ def plot_training_metrics(
     # Place legend in a relatively empty spot, e.g., center right
     ax1.legend(lines, labels, loc="center right")
 
-    plt.title(f"Training Metrics (Final Score: {final_score:.4f})")
+    plt.title(f"{title} (Final Score: {final_score:.4f})")
     fig.tight_layout()  # Ensure the right y-label is not clipped
 
     # Save combined plot
