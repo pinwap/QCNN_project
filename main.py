@@ -68,6 +68,10 @@ def main(cfg: DictConfig):
 
     logger.info("Initializing experiment with configuration:\n%s", OmegaConf.to_yaml(config_dict))
 
+    # Create checkpoints directory
+    checkpoints_dir = os.path.join(save_dir, "checkpoints")
+    os.makedirs(checkpoints_dir, exist_ok=True)
+
     # 1. Initialize Data
     data_mgr = DataManager(
         dataset_name=cfg.dataset_name,
@@ -140,7 +144,8 @@ def main(cfg: DictConfig):
             )
 
             results = auto_pipeline.run(
-                x_train, y_train, x_test, y_test, x_val, y_val
+                x_train, y_train, x_test, y_test, x_val, y_val,
+                checkpoint_dir=checkpoints_dir, file_id=f"{file_id}_phase2"
             )
             final_score, history_list, trained_model, best_chromo, evolution_history = results
 
@@ -286,7 +291,8 @@ def main(cfg: DictConfig):
 
             pipeline = ProductionPipeline(model=model, engine=engine)
             final_score, history_list, trained_model = pipeline.run(
-                x_train, y_train, x_test, y_test, x_val, y_val
+                x_train, y_train, x_test, y_test, x_val, y_val,
+                checkpoint_dir=checkpoints_dir, file_id=file_id
             )
 
             # Save Results

@@ -25,6 +25,7 @@ class BaseEngine(ABC):
         x_test: Optional[torch.Tensor] = None,
         y_test: Optional[torch.Tensor] = None,
         initial_state_dict: Optional[dict] = None,
+        **kwargs
     ) -> Tuple[float, dict, Any]:
         """
         Train the model.

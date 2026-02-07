@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Optional, Tuple, Union
 
 import torch
@@ -93,6 +94,41 @@ class HybridEngine(BaseEngine):
         # สร้างตัวดำเนินการ Z บน qubit ตัวสุดท้ายที่เหลือรอด (last_qubit)
         return SparsePauliOp.from_sparse_list([("Z", [last_qubit], 1.0)], num_qubits=num_qubits)
 
+    def _save_checkpoint(self, checkpoint_path: str, epoch: int, model: Any, optimizer: Any, history: dict, scheduler: Optional[Any] = None) -> None:
+        checkpoint_state = {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "history": history,
+        }
+        if scheduler:
+            checkpoint_state["scheduler_state_dict"] = scheduler.state_dict()
+        
+        try:
+            torch.save(checkpoint_state, checkpoint_path)
+        except Exception as e:
+            logger.warning(f"HybridEngine: Failed to save checkpoint: {e}")
+
+    def _load_checkpoint(self, checkpoint_path: str, model: Any, optimizer: Any, scheduler: Optional[Any] = None) -> Tuple[int, dict]:
+        if not os.path.exists(checkpoint_path):
+            return 0, {}
+
+        logger.info(f"HybridEngine: Found checkpoint at {checkpoint_path}. Resuming...")
+        try:
+            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            model.load_state_dict(checkpoint["model_state_dict"])
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            if scheduler and "scheduler_state_dict" in checkpoint:
+                scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+            
+            start_epoch = checkpoint["epoch"] + 1
+            history = checkpoint.get("history", {})
+            logger.info(f"HybridEngine: Resuming from epoch {start_epoch}")
+            return start_epoch, history
+        except Exception as e:
+            logger.error(f"HybridEngine: Failed to load checkpoint: {e}. Starting fresh.")
+            return 0, {}
+
     def fit(
         self,
         circuit: QuantumCircuit,
@@ -105,6 +141,8 @@ class HybridEngine(BaseEngine):
         x_test: Optional[torch.Tensor] = None,
         y_test: Optional[torch.Tensor] = None,
         initial_state_dict: Optional[dict] = None,
+        checkpoint_dir: Optional[str] = None,
+        file_id: Optional[str] = None,
     ) -> Tuple[float, dict, Any]:
         num_qubits = circuit.num_qubits
         # สร้าง feature map
@@ -194,8 +232,17 @@ class HybridEngine(BaseEngine):
         3. เข้าโหมดการเทรน
         """
         history = {"loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+        start_epoch = 0
+        checkpoint_path = None
 
-        for epoch in range(self.epochs):
+        if checkpoint_dir and file_id:
+            checkpoint_path = os.path.join(checkpoint_dir, f"{file_id}_checkpoint.pth.tar")
+            loaded_epoch, loaded_history = self._load_checkpoint(checkpoint_path, model, optimizer, scheduler)
+            if loaded_epoch > 0:
+                start_epoch = loaded_epoch
+                history = loaded_history
+
+        for epoch in range(start_epoch, self.epochs):
             model.train()
             optimizer.zero_grad()
             output = model(x_train_dev)
@@ -255,6 +302,10 @@ class HybridEngine(BaseEngine):
                     log_msg += f"| Val Loss: {val_loss_scalar:.4f} | Val Acc: {val_acc:.4f} | LR: {current_lr:.2e}"
 
                 logger.info(log_msg)
+
+            # Save Checkpoint
+            if checkpoint_path:
+                self._save_checkpoint(checkpoint_path, epoch, model, optimizer, history, scheduler)
 
         # Evaluate on test set if provided
         if x_test is not None and y_test is not None:
