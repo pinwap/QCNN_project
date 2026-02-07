@@ -1,13 +1,13 @@
 defaults:
-  - __self__
   - config
+  - _self_
 task_name: train
 dataset_name: fashionmnist
 digits: [0, 2]
 preprocessors: ["autoencoder_16"]
 train_lr: 0.05
 feature_map_type: angle
-train_epochs: 1000
+train_epochs: 100
 scheduler_patience: 3
 n_train: 1000
 n_test: 200
