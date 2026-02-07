@@ -44,11 +44,12 @@ verbose: true
 seed: 42
 save_dir: "./output"
 output_dir: "./output"
+resume_dir: null
 
 # แจ้งเตือนเข้า Line
 notifications:
   enabled: true
-  title: "QCNN Training"
+  title: "QCNN Training" 
 
 # คำสั่งว่าไม่ต้องสร้างโฟลเดอร์ย่อยของ Hydra สำหรับบันทึกคำสั่งแต่ละรัน
 hydra:

@@ -43,6 +43,10 @@ def main(cfg: DictConfig):
     # cfg.task is now a DictConfig (loaded from yaml), so specific name is in cfg.task_name
     task_name_str = cfg.get("task_name", "unknown_task")
 
+    # Update notification title dynamically
+    if cfg.get("notifications") and cfg.get("digits"):
+        cfg.notifications.title = f"binary class experiment {cfg.digits}"
+
     # Extract metadata for folder naming
     fm_name = cfg.feature_map_type
     # Take the first preprocessor or 'raw' if list is empty

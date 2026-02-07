@@ -95,6 +95,7 @@ def save_experiment_data(
 
     # 2. Save raw history text
     plots_dir = os.path.join(save_dir, "plots")
+    os.makedirs(plots_dir, exist_ok=True)  # Create plots/ dir if missing
     history_txt = os.path.join(plots_dir, f"{file_id}_history.txt")
     with open(history_txt, "w") as f:
         f.write(str(history))
