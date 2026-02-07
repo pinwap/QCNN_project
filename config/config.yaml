@@ -1,5 +1,5 @@
 # Default Configuration (Consolidated)
-task_name: evolution  #{ Options: evolution, auto_evolution, production }
+task_name: train  #{ Options: evolution, auto_evolution, train }
 model_type: standard #{ Options: standard, evolutionary_qcnn }
 
 # Dataset parameters
