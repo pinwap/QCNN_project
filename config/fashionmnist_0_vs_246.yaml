@@ -8,10 +8,10 @@ dataset_name: fashionmnist
 digits: [0, 2, 4, 6] 
 binary_groups: [[0], [2, 4, 6]]
 preprocessors: ["autoencoder_16"]
-train_lr: 0.05
+train_lr: 0.001
 feature_map_type: angle
-train_epochs: 100
-scheduler_patience: 3
+train_epochs: 30
+scheduler_patience: 5
 n_train: 1000
 n_test: 200
 n_val: 200
