@@ -1,0 +1,38 @@
+defaults:
+  - config
+  - _self_
+task_name: train
+dataset_name: fashionmnist
+# Target Labels: 0 vs [2,4,6] (Balanced)
+digits: [0, 2, 4, 6]
+binary_groups: [[0], [2, 4, 6]]
+
+# Use the 'hybrid_end_to_end' strategy
+strategy: hybrid_end_to_end
+
+# Hybrid settings
+n_qubits: 4 # Reduced qubits since we encode to fewer latent vars likely? 
+            # Or standard 8 if we keep 16 dim and project.
+            # Encoder reduces to 16. If we use n_qubits=4, we need projection 16->4?
+            # Or n_qubits=8 Angle Encoding needs 8 features.
+            # Let's use 4 qubits and let the model project 16 -> 4.
+target_dim: 16 # Encoder output
+  
+# Training params
+train_lr: 0.001
+train_epochs: 30
+feature_map_type: angle
+
+n_train: 1000
+n_test: 200
+n_val: 200
+
+# Autoencoder expects 28x28.
+# FashionMNISTDataset returns: data = dataset.data.float().unsqueeze(1) / 255.0 -> [N, 1, 28, 28] 
+# But 'DataManager' might trigger 'EnsureFeatureDimension' or others if specified.
+# We should ensure preprocessors list is empty or minimal to keep 28x28.
+preprocessors: [] 
+
+# Path to pretrained encoder (Optional)
+# If provided, it loads weights. If not, initializes randomly.
+# pretrained_encoder_path: "path/to/ae.pth" 
