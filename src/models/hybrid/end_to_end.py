@@ -94,8 +94,11 @@ class HybridAutoencoderQCNN(nn.Module):
         self.qc = QuantumCircuit(num_qubits)
         
         # Feature Map
-        fm_builder = FeatureMapBuilder(feature_map_type, num_qubits)
-        self.feature_map = fm_builder.build()
+        from models.feature_maps.factory import resolve_feature_map
+        # resolve_feature_map returns an INSTANCE of the Builder (initialized with no args usually)
+        fm_builder_instance = resolve_feature_map(feature_map_type)
+        # Then call build(num_qubits)
+        self.feature_map = fm_builder_instance.build(num_qubits)
         self.qc.compose(self.feature_map, inplace=True)
         
         # QCNN Ansatz
