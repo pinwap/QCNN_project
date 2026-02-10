@@ -98,8 +98,9 @@ class HybridAutoencoderQCNN(nn.Module):
         # resolve_feature_map returns an INSTANCE of the Builder (initialized with no args usually)
         fm_builder_instance = resolve_feature_map(feature_map_type)
         # Then call build(num_qubits)
-        self.feature_map = fm_builder_instance.build(num_qubits)
-        self.qc.compose(self.feature_map, inplace=True)
+        # Returns (QuantumCircuit, ParameterVector/List)
+        self.feature_map_circuit, self.feature_map_params = fm_builder_instance.build(num_qubits)
+        self.qc.compose(self.feature_map_circuit, inplace=True)
         
         # QCNN Ansatz
         self.ansatz, self.ansatz_params = self.qcnn_wrapper.build()
@@ -121,7 +122,7 @@ class HybridAutoencoderQCNN(nn.Module):
         # ใช้ torch connector เพื่อเชื่อมต่อ QNN กับ PyTorch ให้รับ input เป็น tensor ได้ และวัดผลลัพธ์เป็น tensor
         self.qnn = EstimatorQNN(
             circuit=self.qc,
-            input_params=self.feature_map.parameters,
+            input_params=self.feature_map_params,
             weight_params=self.ansatz_params,
             observables=observable
         )

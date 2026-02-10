@@ -20,7 +20,7 @@ from models.qcnn import StandardQCNN  # noqa: E402
 from training.engines import HybridEngine, QiskitEngine  # noqa: E402
 from training.evolution import EvolutionarySearch  # noqa: E402
 from training.pipeline import ProductionPipeline  # noqa: E402
-from training.strategies import HybridStrategy, QiskitStrategy  # noqa: E402
+from training.strategies import HybridStrategy # QiskitStrategy  # noqa: E402
 from utils import (  # noqa: E402
     initialize_output_dir,
     notify_job_status,
@@ -218,7 +218,7 @@ def main(cfg: DictConfig):
                     num_qubits=cfg.n_qubits, # Use n_qubits from root config usually, or cfg.num_qubits if standard
                     epochs=cfg.train_epochs,
                     lr=cfg.train_lr,
-                    encoding_dim=cfg.target_dim,
+                    encoding_dim=cfg.get("encoding_dim", cfg.target_dim),
                     device=cfg.get("device"),
                     pretrained_encoder_path=cfg.get("pretrained_encoder_path")
                 )

@@ -16,8 +16,9 @@ n_qubits: 4 # Reduced qubits since we encode to fewer latent vars likely?
             # Encoder reduces to 16. If we use n_qubits=4, we need projection 16->4?
             # Or n_qubits=8 Angle Encoding needs 8 features.
             # Let's use 4 qubits and let the model project 16 -> 4.
-target_dim: 16 # Encoder output
-  
+target_dim: null # Important: Set to null to avoid DataManager pre-slicing the image!
+encoding_dim: 16 # Encoder output dimension
+
 # Training params
 train_lr: 0.001
 train_epochs: 30
