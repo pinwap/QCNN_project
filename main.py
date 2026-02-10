@@ -97,6 +97,7 @@ def main(cfg: DictConfig):
         preprocessors=list(cfg.preprocessors),
         target_dim=cfg.target_dim,
         target_labels=tuple(cfg.digits) if cfg.digits else None,
+        binary_groups=cfg.get("binary_groups"),
     )
 
     data_tuple = data_mgr.get_data()
