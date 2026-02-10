@@ -15,7 +15,7 @@ from omegaconf import DictConfig, OmegaConf
 # Load .env file at the very beginning
 load_dotenv()
 
-from data import DataManager  # noqa: E402
+from data import DataManager
 from models.qcnn import StandardQCNN  # noqa: E402
 from training.engines import HybridEngine, QiskitEngine  # noqa: E402
 from training.evolution import EvolutionarySearch  # noqa: E402

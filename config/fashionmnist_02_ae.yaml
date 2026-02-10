@@ -14,3 +14,4 @@ n_test: 200
 n_val: 200
 
 # uv run main.py --config-name fashionmnist_02_ae 'digits=[4,6]'
+# uv run main.py --config-name fashionmnist_02_ae resume_dir="D:\Pin\STUDY\PROJECT\senior project\QCNN_project\output\train_angle_autoencoder16_20260207_103844"
