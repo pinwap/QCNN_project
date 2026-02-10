@@ -224,7 +224,7 @@ def main(cfg: DictConfig):
                 )
                 
                 # Run evaluation directly as training
-                final_score, model_state = strategy.evaluate(
+                final_score, history_list, model_state = strategy.evaluate(
                     structure_code=[],
                     x_train=x_train, y_train=y_train,
                     x_test=x_test, y_test=y_test,
@@ -233,8 +233,6 @@ def main(cfg: DictConfig):
                 
                 # Save
                 torch.save(model_state, os.path.join(save_dir, "model", f"{file_id}_hybrid_e2e.pth"))
-                # Mock history for compatibility if needed, or save simple result
-                history_list = [] # Strategy doesn't return full epoch history in detail yet
             
             else:
                 # Resolve Engine

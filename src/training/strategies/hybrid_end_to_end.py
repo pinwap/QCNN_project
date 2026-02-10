@@ -87,6 +87,12 @@ class HybridEndToEndStrategy(EvaluationStrategy):
         best_val_acc = 0.0 #เก็บคะแนนสูงสุดของ validation ที่เคยทำได้
         best_model_state = None #เก็บ state dict =ร่างทองของโมเดลที่ให้ผลลัพธ์ validation ดีที่สุด
         
+        history = {
+            "loss": [],
+            "train_acc": [],
+            "val_acc": []
+        }
+
         model.train() #บอก torch ให้เปิดการฝึกโมเดล (เปิด gradient, dropout,ฯลฯ)
         for epoch in range(self.epochs):
             total_loss = 0
@@ -136,6 +142,10 @@ class HybridEndToEndStrategy(EvaluationStrategy):
                     best_val_acc = val_acc
                     best_model_state = model.state_dict()
             
+            history["loss"].append(avg_loss)
+            history["train_acc"].append(train_acc)
+            history["val_acc"].append(val_acc)
+            
             logger.info(f"Epoch {epoch+1}/{self.epochs} - Loss: {avg_loss:.4f} - Train Acc: {train_acc:.4f} - Val Acc: {val_acc:.4f}")
 
         # 4. Final Evaluation on Test Set : ใช้ร่างที่ดีที่สุดที่ได้จาก val มาทดสอบบน test set ไม่ได้ใช้ร่าง epoch สุดท้ายที่ฝึก
@@ -159,4 +169,4 @@ class HybridEndToEndStrategy(EvaluationStrategy):
         test_acc = test_correct / test_total
         logger.info(f"Final Test Accuracy: {test_acc:.4f}")
         
-        return test_acc, model.state_dict()
+        return test_acc, history, model.state_dict()
