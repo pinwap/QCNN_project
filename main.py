@@ -113,7 +113,10 @@ def main(cfg: DictConfig):
             logger.info("Starting Task: Auto-Evolution (Search + Retrain)")
 
             # Phase 1: Setup Evolution Search
-            if cfg.strategy_type == "hybrid":
+            if cfg.get("strategy_type") == "hybrid_end_to_end":
+                 # Not supported in auto_evolution yet, usually train-only
+                 raise NotImplementedError("Auto evolution not supported for hybrid_end_to_end yet")
+            elif cfg.strategy_type == "hybrid":
                 strategy = HybridStrategy(
                     num_qubits=cfg.num_qubits,
                     epochs=cfg.eval_epochs,
@@ -203,113 +206,90 @@ def main(cfg: DictConfig):
             )
             save_model(trained_model, save_dir, file_id, name="retrained_qcnn")
 
-        elif task_name_str == "evolution":
-            logger.info("Starting Task: Evolutionary Architecture Search")
-
-            # Resolve Strategy
-            if cfg.strategy_type == "hybrid":
-                strategy = HybridStrategy(
-                    num_qubits=cfg.num_qubits,
-                    epochs=cfg.eval_epochs,
-                    lr=cfg.eval_lr,
-                    device=cfg.get("device"),
-                    gradient_method=cfg.get("gradient_method", "param_shift"),
-                    feature_map=cfg.feature_map_type,
-                )
-            else:
-                strategy = QiskitStrategy(
-                    num_qubits=cfg.num_qubits,
-                    max_iter=cfg.eval_max_iter,
-                    feature_map=cfg.feature_map_type,
-                )
-
-            search = EvolutionarySearch(
-                data_manager=data_mgr,
-                strategy=strategy,
-                n_pop=cfg.n_pop,
-                n_gen=cfg.n_gen,
-                n_gates=cfg.n_gates,
-            )
-            best_chromo, evolution_history = search.run()
-            logger.info(
-                "Evolutionary Search Complete. Best Fitness: %.4f",
-                best_chromo.fitness if best_chromo else 0,
-            )
-            final_score = best_chromo.fitness if best_chromo else 0
-
-            # Save Results
-            if best_chromo:
-                save_experiment_data(
-                    final_score=best_chromo.fitness,
-                    history=evolution_history,
-                    save_dir=save_dir,
-                    file_id=file_id,
-                    best_structure_code=best_chromo.collapse(),
-                    config=config_dict,
-                )
-                plot_fitness_history(
-                    history=evolution_history,
-                    save_path=os.path.join(save_dir, "plots", f"{file_id}_fitness.png"),
-                    title=f"Evolution Fitness (Best: {best_chromo.fitness:.4f})",
-                )
-                save_model(best_chromo, save_dir, file_id, name="best_chromosome")
-
         elif task_name_str == "train":
             logger.info("Starting Task: Standard Training")
 
-            # Resolve Engine
-            if cfg.engine_type == "hybrid":
-                engine = HybridEngine(
-                    feature_map=cfg.feature_map_type,
+            if cfg.get("strategy") == "hybrid_end_to_end":
+                
+                from training.strategies.hybrid_end_to_end import HybridEndToEndStrategy
+                logger.info("Using Hybrid End-to-End Strategy")
+                
+                strategy = HybridEndToEndStrategy(
+                    num_qubits=cfg.n_qubits, # Use n_qubits from root config usually, or cfg.num_qubits if standard
                     epochs=cfg.train_epochs,
                     lr=cfg.train_lr,
-                    gradient_method=cfg.get("gradient_method", "param_shift"),
-                    use_v2_primitives=cfg.get("use_v2_primitives", False),
-                    use_scheduler=cfg.get("use_scheduler", True),
-                    scheduler_patience=cfg.get("scheduler_patience", 5),
-                    scheduler_factor=cfg.get("scheduler_factor", 0.5),
+                    encoding_dim=cfg.target_dim,
                     device=cfg.get("device"),
+                    pretrained_encoder_path=cfg.get("pretrained_encoder_path")
                 )
+                
+                # Run evaluation directly as training
+                final_score, model_state = strategy.evaluate(
+                    structure_code=[],
+                    x_train=x_train, y_train=y_train,
+                    x_test=x_test, y_test=y_test,
+                    x_val=x_val, y_val=y_val
+                )
+                
+                # Save
+                torch.save(model_state, os.path.join(save_dir, "model", f"{file_id}_hybrid_e2e.pth"))
+                # Mock history for compatibility if needed, or save simple result
+                history_list = [] # Strategy doesn't return full epoch history in detail yet
+            
             else:
-                engine = QiskitEngine(
-                    feature_map=cfg.feature_map_type,
-                    max_iter=cfg.get("train_max_iter"),  # Map max_iter for Qiskit
-                )
-
-            # Resolve Model
-            if cfg.model_type == "standard":
-                model = StandardQCNN(num_qubits=cfg.num_qubits)
-            elif cfg.model_type == "evolutionary":
-                # Check for chromosome_path in config
-                chromo_path = cfg.get("chromosome_path")
-                if chromo_path and os.path.exists(chromo_path):
-                    # Load the chromosome (it was saved with torch.save)
-                    # We only need the collapsed genes (list of ints)
-                    from models.qcnn import EvolutionaryQCNN
-                    chromo_obj = torch.load(chromo_path, weights_only=False)
-                    # If it's a QuantumChromosome object, collapse it;
-                    # otherwise assume it's already a list
-                    if hasattr(chromo_obj, "collapse"):
-                        struct_code = chromo_obj.collapse()
-                    elif hasattr(chromo_obj, "genes"):
-                        struct_code = chromo_obj.genes
-                    else:
-                        struct_code = chromo_obj
-
-                    model = EvolutionaryQCNN(num_qubits=cfg.num_qubits, chromosome=struct_code)
-                    logger.info(f"Loaded evolutionary model from {chromo_path}")
-                else:
-                    raise ValueError(
-                        "model_type='evolutionary' requires a valid 'task.chromosome_path'"
+                # Resolve Engine
+                if cfg.get("engine_type", "hybrid") == "hybrid":
+                    engine = HybridEngine(
+                        feature_map=cfg.feature_map_type,
+                        epochs=cfg.train_epochs,
+                        lr=cfg.train_lr,
+                        gradient_method=cfg.get("gradient_method", "param_shift"),
+                        use_v2_primitives=cfg.get("use_v2_primitives", False),
+                        use_scheduler=cfg.get("use_scheduler", True),
+                        scheduler_patience=cfg.get("scheduler_patience", 5),
+                        scheduler_factor=cfg.get("scheduler_factor", 0.5),
+                        device=cfg.get("device"),
                     )
-            else:
-                raise ValueError(f"Unknown model_type: {cfg.task.model_type}")
+                else:
+                    engine = QiskitEngine(
+                        feature_map=cfg.feature_map_type,
+                        max_iter=cfg.get("train_max_iter"),  # Map max_iter for Qiskit
+                    )
 
-            pipeline = ProductionPipeline(model=model, engine=engine)
-            final_score, history_list, trained_model = pipeline.run(
-                x_train, y_train, x_test, y_test, x_val, y_val,
-                checkpoint_dir=checkpoints_dir, file_id=file_id
-            )
+                # Resolve Model
+                if cfg.model_type == "standard":
+                    model = StandardQCNN(num_qubits=cfg.num_qubits)
+                elif cfg.model_type == "evolutionary":
+                    # Check for chromosome_path in config
+                    chromo_path = cfg.get("chromosome_path")
+                    if chromo_path and os.path.exists(chromo_path):
+                        # Load the chromosome (it was saved with torch.save)
+                        # We only need the collapsed genes (list of ints)
+                        from models.qcnn import EvolutionaryQCNN
+                        chromo_obj = torch.load(chromo_path, weights_only=False)
+                        # If it's a QuantumChromosome object, collapse it;
+                        # otherwise assume it's already a list
+                        if hasattr(chromo_obj, "collapse"):
+                            struct_code = chromo_obj.collapse()
+                        elif hasattr(chromo_obj, "genes"):
+                            struct_code = chromo_obj.genes
+                        else:
+                            struct_code = chromo_obj
+
+                        model = EvolutionaryQCNN(num_qubits=cfg.num_qubits, chromosome=struct_code)
+                        logger.info(f"Loaded evolutionary model from {chromo_path}")
+                    else:
+                        raise ValueError(
+                            "model_type='evolutionary' requires a valid 'task.chromosome_path'"
+                        )
+                else:
+                    raise ValueError(f"Unknown model_type: {cfg.get('model_type', 'standard')}")
+
+                pipeline = ProductionPipeline(model=model, engine=engine)
+                final_score, history_list, trained_model = pipeline.run(
+                    x_train, y_train, x_test, y_test, x_val, y_val,
+                    checkpoint_dir=checkpoints_dir, file_id=file_id
+                )
 
             # Save Results
 
