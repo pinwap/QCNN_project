@@ -42,7 +42,8 @@ def main(cfg: DictConfig):
     # 0. Initialize Old-School Logging Directory
     # cfg.task is now a DictConfig (loaded from yaml), so specific name is in cfg.task_name
     task_name_str = cfg.get("task_name", "unknown_task")
-
+    experiment_name_str = cfg.get("experiment_name", "experiment")
+    
     # Update notification title dynamically
     if cfg.get("notifications") and cfg.get("digits"):
         cfg.notifications.title = f"binary class experiment {cfg.digits}"
@@ -64,7 +65,7 @@ def main(cfg: DictConfig):
         logger.info(f"inferred file_id: {file_id}")
     else:
         save_dir, file_id = initialize_output_dir(
-            task_name_str,
+            experiment_name_str if experiment_name_str else task_name_str,
             base_output_dir=cfg.save_dir,
             preprocessor_name=prep_name,
             feature_map_name=fm_name,
@@ -79,8 +80,7 @@ def main(cfg: DictConfig):
             config_dict.pop("engine", None)
         elif task_name_str == "train":
             config_dict.pop("evolution", None)
-            config_dict.pop("strategy", None)
-
+            
     logger.info("Initializing experiment with configuration:\n%s", OmegaConf.to_yaml(config_dict))
 
     # Create checkpoints directory
@@ -166,7 +166,7 @@ def main(cfg: DictConfig):
                 x_train, y_train, x_test, y_test, x_val, y_val,
                 checkpoint_dir=checkpoints_dir, file_id=f"{file_id}_phase2"
             )
-            final_score, history_list, trained_model, best_chromo, evolution_history = results
+            final_score, history, trained_model, best_chromo, evolution_history = results
 
             # Save Combined Results
             # Phase 1: Evolution
@@ -190,7 +190,7 @@ def main(cfg: DictConfig):
             # Phase 2: Retraining
             save_experiment_data(
                 final_score=final_score,
-                history=history_list,
+                history=history,
                 save_dir=save_dir,
                 file_id=f"{file_id}_phase2_retrain",
                 config=config_dict,
@@ -198,7 +198,7 @@ def main(cfg: DictConfig):
             dataset_info = f"{cfg.n_train} {cfg.get('n_val', 0)}"
             plot_title = f"AutoEvolution - {prep_name} - {fm_name} - {dataset_info}"
             plot_training_metrics(
-                history=history_list,
+                history=history,
                 save_dir=os.path.join(save_dir, "plots"),
                 file_id=f"{file_id}_phase2",
                 final_score=final_score,
@@ -206,6 +206,7 @@ def main(cfg: DictConfig):
             )
             save_model(trained_model, save_dir, file_id, name="retrained_qcnn")
 
+        # เทรนปกติ ไม่qea
         elif task_name_str == "train":
             logger.info("Starting Task: Standard Training")
 
@@ -224,7 +225,7 @@ def main(cfg: DictConfig):
                 )
                 
                 # Run evaluation directly as training
-                final_score, history_list, model_state = strategy.evaluate(
+                final_score, history, model_state = strategy.evaluate(
                     structure_code=[],
                     x_train=x_train, y_train=y_train,
                     x_test=x_test, y_test=y_test,
@@ -233,10 +234,12 @@ def main(cfg: DictConfig):
                 
                 # Save
                 torch.save(model_state, os.path.join(save_dir, "model", f"{file_id}_hybrid_e2e.pth"))
+                trained_model = model_state # Assign for generic save_model call
             
             else:
                 # Resolve Engine
                 if cfg.get("engine_type", "hybrid") == "hybrid":
+                    logger.info("Using Hybrid Engine for Training")
                     engine = HybridEngine(
                         feature_map=cfg.feature_map_type,
                         epochs=cfg.train_epochs,
@@ -284,7 +287,7 @@ def main(cfg: DictConfig):
                     raise ValueError(f"Unknown model_type: {cfg.get('model_type', 'standard')}")
 
                 pipeline = ProductionPipeline(model=model, engine=engine)
-                final_score, history_list, trained_model = pipeline.run(
+                final_score, history, trained_model = pipeline.run(
                     x_train, y_train, x_test, y_test, x_val, y_val,
                     checkpoint_dir=checkpoints_dir, file_id=file_id
                 )
@@ -293,7 +296,7 @@ def main(cfg: DictConfig):
 
             save_experiment_data(
                 final_score=final_score,
-                history=history_list,
+                history=history,
                 save_dir=save_dir,
                 file_id=file_id,
                 config=config_dict,
@@ -301,7 +304,7 @@ def main(cfg: DictConfig):
             dataset_info = f"{cfg.n_train} {cfg.get('n_val', 0)}"
             plot_title = f"{cfg.model_type} - {prep_name} - {fm_name} - {dataset_info}"
             plot_training_metrics(
-                history=history_list,
+                history=history,
                 save_dir=os.path.join(save_dir, "plots"),
                 file_id=file_id,
                 final_score=final_score,

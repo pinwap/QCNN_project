@@ -65,10 +65,6 @@ class ConvAutoencoderModel(nn.Module):
         return encoded, decoded
 
 class AutoencoderReducer(BasePreprocessor):
-    """
-    Dimensionality reduction using a simple fully-connected Autoencoder.
-    Trains on the input data effectively acting as a feature extractor.
-    """
     def __init__(self, target_dim: int, dataset_name: str = "unknown", epochs: int = 20, learning_rate: float = 1e-3, batch_size: int = 64):
         self.target_dim = target_dim
         self.epochs = epochs
@@ -78,7 +74,6 @@ class AutoencoderReducer(BasePreprocessor):
         self.model = None
 
         # Define path for saving/loading model weights
-        # We put them in a local 'autoencoders' directory relative to this file
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.model_dir = os.path.join(current_dir, "autoencoders")
         os.makedirs(self.model_dir, exist_ok=True)
@@ -121,11 +116,11 @@ class AutoencoderReducer(BasePreprocessor):
 
         dataset = TensorDataset(flat_data, flat_data)
 
+        # Split dataset into train and val (80-20 split)
         val_size = max(int(len(dataset) * 0.2), 1)
         if val_size >= len(dataset):
             val_size = max(len(dataset) - 1, 0)
         train_size = len(dataset) - val_size
-
         if train_size <= 0:
             train_dataset = dataset
             val_dataset = None
@@ -177,6 +172,7 @@ class AutoencoderReducer(BasePreprocessor):
             else:
                 val_history.append(None)
 
+            # Logging every 5 epochs
             if (epoch + 1) % 5 == 0 or epoch == 0:
                 msg = f"  ConvAE Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}"
                 if val_history[-1] is not None:
@@ -219,9 +215,9 @@ class AutoencoderReducer(BasePreprocessor):
 
         self.model.eval()
         with torch.no_grad():
-            encoded, _ = self.model(img_data)
+            encoded, decoded = self.model(img_data)
 
         encoded = encoded.cpu()
-
-        # Sigmoid activation in Encoder already ensures [0, 1] range.
+        # decoded = decoded.cpu() # unused for downstream tasks
+        
         return encoded

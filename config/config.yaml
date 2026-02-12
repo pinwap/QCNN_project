@@ -1,6 +1,7 @@
 # Default Configuration (Consolidated)
 task_name: train  #{ Options: evolution, auto_evolution, train }
 model_type: standard #{ Options: standard, evolutionary_qcnn }
+experiment_name: None
 
 # Dataset parameters
 dataset_name: mnist #{ Options: mnist, fashion_mnist, custom_dataset }

@@ -2,6 +2,7 @@ defaults:
   - config
   - _self_
 task_name: train
+experiment_name: "fashionmnist_hybrid_e2e"
 dataset_name: fashionmnist
 # Target Labels: 0 vs [2,4,6] (Balanced)
 digits: [0, 2, 4, 6]

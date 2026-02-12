@@ -79,16 +79,35 @@ class FashionMNISTDataset(BaseDataset):
             logger.info(f"Loaded {len(data)} samples with binary groups.")
             return data, new_targets
 
-        # Use provided target_labels or default to (0, 1)
-        labels = self.target_labels or (0, 1)
-        # idx เป็นได้เป็น tensor true/false ที่เก็บตำแหน่งของข้อมูลที่ตรงกับเงื่อนไข
-        idx = (dataset.targets == labels[0]) | (dataset.targets == labels[1])
-        dataset.targets = dataset.targets[idx]
-        dataset.data = dataset.data[idx]
+        # Use provided target_labels. If None, load ALL classes (0-9).
+        # If tuple of 2, assume binary classification mapping (-1, 1).
+        
+        if self.target_labels is None:
+             # Load all data without filtering
+             data = dataset.data.float().unsqueeze(1) / 255.0
+             return data, dataset.targets
 
-        targets = dataset.targets.clone().detach()
-        # Map classes to -1.0 and 1.0
-        new_targets = torch.where(targets == labels[0], torch.tensor(-1.0), torch.tensor(1.0))
+        labels = self.target_labels
+        
+        # Binary Classification Case
+        if len(labels) == 2:
+            idx = (dataset.targets == labels[0]) | (dataset.targets == labels[1])
+            dataset.targets = dataset.targets[idx]
+            dataset.data = dataset.data[idx]
+
+            targets = dataset.targets.clone().detach()
+            # Map classes to -1.0 and 1.0 based on position in tuple
+            new_targets = torch.where(targets == labels[0], torch.tensor(-1.0), torch.tensor(1.0))
+            data = dataset.data.float().unsqueeze(1) / 255.0
+            return data, new_targets
+        
+        # Multi-class / Subset Case (No mapping to -1/1)
+        mask = torch.zeros_like(dataset.targets, dtype=torch.bool)
+        for l in labels:
+            mask |= (dataset.targets == l)
+        
+        dataset.data = dataset.data[mask]
+        dataset.targets = dataset.targets[mask]
+        
         data = dataset.data.float().unsqueeze(1) / 255.0
-
-        return data, new_targets
+        return data, dataset.targets

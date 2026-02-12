@@ -34,18 +34,12 @@ class HybridAutoencoderQCNN(nn.Module):
         
         self.num_qubits = num_qubits
         if qcnn_structure is None:
-             # Default structure if not provided (placeholder)
-             # In a real scenario, this should come from evolutionary search or config
              qcnn_structure = [0] * num_qubits # Example
         
-        # 1. Classical Encoder Part (Reusing ConvAutoencoderModel's encoder)
-        # We need to construct the exact same structure or load it
-        # Ideally, we should import the class definition to avoid duplication
-        # But for now, let's redefine the encoder part here to be self-contained or import it if possible.
-        # Let's import the one from data.preprocessor.autoencoder to ensure consistency.
         from data.preprocessor.autoencoder import ConvAutoencoderModel
         
-        dummy_ae = ConvAutoencoderModel(input_dim, encoding_dim) #สร้างวงจร autoencoderจาก class ConvAutoencoderModel ที่เราเคยสร้างไว้เพื่อให้ได้ encoder ที่มีโครงสร้างเดียวกันกับที่เราใช้ฝึกก่อนหน้านี้ 
+        #1. สร้างวงจร autoencoderจาก class ConvAutoencoderModel ที่เราเคยสร้างไว้เพื่อให้ได้ encoder ที่มีโครงสร้างเดียวกันกับที่เราใช้ฝึกก่อนหน้านี้ 
+        dummy_ae = ConvAutoencoderModel(input_dim, encoding_dim) 
         self.encoder = dummy_ae.encoder #เอาแค่ส่วน encoder มาใช้ในโมเดลนี้
         
         if pretrained_encoder_path:
@@ -59,8 +53,6 @@ class HybridAutoencoderQCNN(nn.Module):
             }
             # กันเหนียวเผื่อว่า checkpoint ที่โหลดมาอาจจะเป็น state dict ของโมเดลทั้งตัวเลยก็ได้ ถ้าไม่มี prefix 'encoder.' ก็ลองดูว่ามี key ที่ตรงกับ encoder เลยไหม
             if not encoder_state_dict:
-                 # Maybe the checkpoint IS the state dict of the model directly
-                 # If the keys match exactly
                  encoder_state_dict = {
                     k.replace('encoder.', ''): v 
                     for k, v in checkpoint.get('state_dict', checkpoint).items() 
@@ -95,10 +87,8 @@ class HybridAutoencoderQCNN(nn.Module):
         
         # Feature Map
         from models.feature_maps.factory import resolve_feature_map
-        # resolve_feature_map returns an INSTANCE of the Builder (initialized with no args usually)
         fm_builder_instance = resolve_feature_map(feature_map_type)
-        # Then call build(num_qubits)
-        # Returns (QuantumCircuit, ParameterVector/List)
+        
         self.feature_map_circuit, self.feature_map_params = fm_builder_instance.build(num_qubits)
         self.qc.compose(self.feature_map_circuit, inplace=True)
         
@@ -106,7 +96,7 @@ class HybridAutoencoderQCNN(nn.Module):
         self.ansatz, self.ansatz_params = self.qcnn_wrapper.build()
         self.qc.compose(self.ansatz, inplace=True)
         
-        # Measurement: Measure the last remaining qubit (usually qubit 0 or defined by pooling)
+        # 
         _, _, last_qubit_idx = self.qcnn_wrapper.build_with_metadata()
         
         # Fix observable construction:
