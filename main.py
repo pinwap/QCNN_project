@@ -42,7 +42,7 @@ def main(cfg: DictConfig):
     # 0. Initialize Old-School Logging Directory
     # cfg.task is now a DictConfig (loaded from yaml), so specific name is in cfg.task_name
     task_name_str = cfg.get("task_name", "unknown_task")
-    experiment_name_str = cfg.get("experiment_name", "experiment")
+    experiment_name_str = cfg.get("experiment_name")
     
     # Update notification title dynamically
     if cfg.get("notifications") and cfg.get("digits"):
