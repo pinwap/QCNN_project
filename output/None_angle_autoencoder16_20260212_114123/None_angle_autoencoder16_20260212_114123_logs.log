@@ -1,0 +1,170 @@
+  2026-02-12 11:41:23,269 - __main__ - INFO - Initializing experiment with configuration:
+  task_name: train
+  model_type: standard
+  experiment_name: None
+  dataset_name: fashionmnist
+  data_path: ./data
+  n_train: 1000
+  n_test: 200
+  n_val: 200
+  digits:
+  - 0
+  - 2
+  - 4
+  - 6
+  target_dim: 16
+  preprocessors:
+  - autoencoder_16
+  n_pop: 20
+  n_gen: 10
+  n_gates: 200
+  mutation_rate: 0.1
+  engine_type: hybrid
+  train_epochs: 100
+  train_lr: 0.05
+  gradient_method: spsa
+  device: null
+  use_v2_primitives: true
+  use_scheduler: true
+  scheduler_patience: 3
+  scheduler_factor: 0.5
+  strategy_type: hybrid
+  eval_epochs: 5
+  eval_lr: 0.01
+  eval_max_iter: 50
+  feature_map_type: angle
+  num_qubits: 16
+  verbose: true
+  seed: 42
+  save_dir: ./output
+  output_dir: ./output
+  resume_dir: null
+  notifications:
+    enabled: true
+    title: binary class experiment [0, 2, 4, 6]
+  binary_groups:
+  - - 2
+  - - 0
+    - 4
+    - 6
+
+  2026-02-12 11:41:23,269 - data.dataset.fashion_mnist_dataset - INFO - Loading FashionMNIST data from ./data
+  2026-02-12 11:41:23,277 - data.dataset.fashion_mnist_dataset - INFO - Using binary groups: [[2], [0, 4, 6]]
+  2026-02-12 11:41:23,278 - data.dataset.fashion_mnist_dataset - INFO - Subsampled group 1 from 18000 to 6000 to match group 0
+  2026-02-12 11:41:23,281 - data.dataset.fashion_mnist_dataset - INFO - Loaded 12000 samples with binary groups.
+  2026-02-12 11:41:23,301 - data.preprocessor.autoencoder - INFO - Loading pre-trained Autoencoder from: /Users/xunflowerrr/Main/Work/GithubRepository/QCNN_project/src/data/preprocessor/autoencoders/conv_ae_fashionmnist_16.pth
+  2026-02-12 11:41:23,451 - __main__ - INFO - Starting Task: Standard Training
+  2026-02-12 11:41:23,451 - __main__ - INFO - Using Hybrid Engine for Training
+  2026-02-12 11:41:23,452 - training.engines.hybrid - INFO - HybridEngine using device: mps
+  2026-02-12 11:41:23,452 - training.engines.hybrid - INFO - HybridEngine: Using gradient method: spsa
+  2026-02-12 11:41:23,452 - training.pipeline - INFO - Executing Production Pipeline for model: StandardQCNN
+  2026-02-12 11:41:23,454 - training.pipeline - INFO - Circuit built. Num Qubits: 16, Num Params: 123
+  2026-02-12 11:41:23,454 - training.engines.hybrid - INFO - HybridEngine: Optimizing 123 parameters.
+  2026-02-12 11:41:23,459 - training.engines.hybrid - INFO - HybridEngine: Initialized weights with uniform distribution [-0.5, 0.5]
+  2026-02-12 11:41:23,460 - training.engines.hybrid - WARNING - Using MPS (Metal Performance Shaders). If gradients are zero, try 'engine.device=cpu'.
+  2026-02-12 11:41:23,461 - training.engines.hybrid - INFO - HybridEngine: No checkpoint found at ./output/None_angle_autoencoder16_20260212_114123/checkpoints/None_angle_autoencoder16_20260212_114123_checkpoint.pth.tar. Starting fresh.
+  2026-02-12 11:41:42,685 - training.engines.hybrid - INFO - Epoch 1/100, Loss: 1.2372 | Acc: 0.3220 | Grad: 1.23e+00 | Val Loss: 1.2175 | Val Acc: 0.3050 | LR: 5.00e-02
+  2026-02-12 11:42:01,606 - training.engines.hybrid - INFO - Epoch 2/100, Loss: 1.2029 | Acc: 0.3410 | Grad: 1.25e+00 | Val Loss: 1.1624 | Val Acc: 0.3700 | LR: 5.00e-02
+  2026-02-12 11:42:20,848 - training.engines.hybrid - INFO - Epoch 3/100, Loss: 1.1414 | Acc: 0.3790 | Grad: 1.12e+00 | Val Loss: 1.1123 | Val Acc: 0.4450 | LR: 5.00e-02
+  2026-02-12 11:42:39,975 - training.engines.hybrid - INFO - Epoch 4/100, Loss: 1.0950 | Acc: 0.4750 | Grad: 9.27e-01 | Val Loss: 1.0868 | Val Acc: 0.4900 | LR: 5.00e-02
+  2026-02-12 11:42:59,056 - training.engines.hybrid - INFO - Epoch 5/100, Loss: 1.0628 | Acc: 0.5050 | Grad: 8.35e-01 | Val Loss: 1.0701 | Val Acc: 0.4950 | LR: 5.00e-02
+  2026-02-12 11:43:18,311 - training.engines.hybrid - INFO - Epoch 6/100, Loss: 1.0476 | Acc: 0.5110 | Grad: 8.94e-01 | Val Loss: 1.0580 | Val Acc: 0.5050 | LR: 5.00e-02
+  2026-02-12 11:43:37,777 - training.engines.hybrid - INFO - Epoch 7/100, Loss: 1.0370 | Acc: 0.5100 | Grad: 8.08e-01 | Val Loss: 1.0414 | Val Acc: 0.5050 | LR: 5.00e-02
+  2026-02-12 11:43:57,590 - training.engines.hybrid - INFO - Epoch 8/100, Loss: 1.0234 | Acc: 0.5170 | Grad: 7.58e-01 | Val Loss: 1.0311 | Val Acc: 0.5200 | LR: 5.00e-02
+  2026-02-12 11:44:17,056 - training.engines.hybrid - INFO - Epoch 9/100, Loss: 1.0127 | Acc: 0.5200 | Grad: 9.16e-01 | Val Loss: 1.0179 | Val Acc: 0.5150 | LR: 5.00e-02
+  2026-02-12 11:44:36,872 - training.engines.hybrid - INFO - Epoch 10/100, Loss: 1.0029 | Acc: 0.5290 | Grad: 7.60e-01 | Val Loss: 1.0056 | Val Acc: 0.5200 | LR: 5.00e-02
+  2026-02-12 11:44:56,895 - training.engines.hybrid - INFO - Epoch 11/100, Loss: 0.9907 | Acc: 0.5330 | Grad: 7.65e-01 | Val Loss: 0.9914 | Val Acc: 0.5250 | LR: 5.00e-02
+  2026-02-12 11:45:17,111 - training.engines.hybrid - INFO - Epoch 12/100, Loss: 0.9811 | Acc: 0.5430 | Grad: 7.29e-01 | Val Loss: 0.9833 | Val Acc: 0.5350 | LR: 5.00e-02
+  2026-02-12 11:45:41,685 - training.engines.hybrid - INFO - Epoch 13/100, Loss: 0.9703 | Acc: 0.5500 | Grad: 7.04e-01 | Val Loss: 0.9705 | Val Acc: 0.5350 | LR: 5.00e-02
+  2026-02-12 11:46:11,514 - training.engines.hybrid - INFO - Epoch 14/100, Loss: 0.9631 | Acc: 0.5530 | Grad: 6.96e-01 | Val Loss: 0.9612 | Val Acc: 0.5400 | LR: 5.00e-02
+  2026-02-12 11:46:42,705 - training.engines.hybrid - INFO - Epoch 15/100, Loss: 0.9549 | Acc: 0.5610 | Grad: 6.61e-01 | Val Loss: 0.9525 | Val Acc: 0.5600 | LR: 5.00e-02
+  2026-02-12 11:47:15,080 - training.engines.hybrid - INFO - Epoch 16/100, Loss: 0.9501 | Acc: 0.5680 | Grad: 6.88e-01 | Val Loss: 0.9458 | Val Acc: 0.5550 | LR: 5.00e-02
+  2026-02-12 11:47:49,128 - training.engines.hybrid - INFO - Epoch 17/100, Loss: 0.9433 | Acc: 0.5740 | Grad: 7.24e-01 | Val Loss: 0.9422 | Val Acc: 0.5700 | LR: 5.00e-02
+  2026-02-12 11:48:22,534 - training.engines.hybrid - INFO - Epoch 18/100, Loss: 0.9357 | Acc: 0.6000 | Grad: 5.62e-01 | Val Loss: 0.9372 | Val Acc: 0.5800 | LR: 5.00e-02
+  2026-02-12 11:48:55,604 - training.engines.hybrid - INFO - Epoch 19/100, Loss: 0.9336 | Acc: 0.6050 | Grad: 6.17e-01 | Val Loss: 0.9310 | Val Acc: 0.5950 | LR: 5.00e-02
+  2026-02-12 11:49:38,108 - training.engines.hybrid - INFO - Epoch 20/100, Loss: 0.9300 | Acc: 0.6210 | Grad: 5.54e-01 | Val Loss: 0.9273 | Val Acc: 0.6000 | LR: 5.00e-02
+  2026-02-12 11:50:14,296 - training.engines.hybrid - INFO - Epoch 21/100, Loss: 0.9253 | Acc: 0.6370 | Grad: 6.30e-01 | Val Loss: 0.9217 | Val Acc: 0.6200 | LR: 5.00e-02
+  2026-02-12 11:50:53,245 - training.engines.hybrid - INFO - Epoch 22/100, Loss: 0.9227 | Acc: 0.6390 | Grad: 5.99e-01 | Val Loss: 0.9168 | Val Acc: 0.6350 | LR: 5.00e-02
+  2026-02-12 11:51:29,684 - training.engines.hybrid - INFO - Epoch 23/100, Loss: 0.9196 | Acc: 0.6570 | Grad: 5.92e-01 | Val Loss: 0.9204 | Val Acc: 0.6350 | LR: 5.00e-02
+  2026-02-12 11:52:07,291 - training.engines.hybrid - INFO - Epoch 24/100, Loss: 0.9162 | Acc: 0.6650 | Grad: 5.40e-01 | Val Loss: 0.9097 | Val Acc: 0.6300 | LR: 5.00e-02
+  2026-02-12 11:52:44,697 - training.engines.hybrid - INFO - Epoch 25/100, Loss: 0.9154 | Acc: 0.6730 | Grad: 7.24e-01 | Val Loss: 0.9107 | Val Acc: 0.6450 | LR: 5.00e-02
+  2026-02-12 11:53:23,093 - training.engines.hybrid - INFO - Epoch 26/100, Loss: 0.9106 | Acc: 0.6760 | Grad: 6.36e-01 | Val Loss: 0.9028 | Val Acc: 0.6550 | LR: 5.00e-02
+  2026-02-12 11:54:00,884 - training.engines.hybrid - INFO - Epoch 27/100, Loss: 0.9073 | Acc: 0.6850 | Grad: 6.35e-01 | Val Loss: 0.8925 | Val Acc: 0.6850 | LR: 5.00e-02
+  2026-02-12 11:54:39,816 - training.engines.hybrid - INFO - Epoch 28/100, Loss: 0.9002 | Acc: 0.6970 | Grad: 6.94e-01 | Val Loss: 0.8905 | Val Acc: 0.6800 | LR: 5.00e-02
+  2026-02-12 11:55:22,268 - training.engines.hybrid - INFO - Epoch 29/100, Loss: 0.8963 | Acc: 0.6930 | Grad: 8.12e-01 | Val Loss: 0.8832 | Val Acc: 0.6900 | LR: 5.00e-02
+  2026-02-12 11:56:00,810 - training.engines.hybrid - INFO - Epoch 30/100, Loss: 0.8899 | Acc: 0.7070 | Grad: 6.70e-01 | Val Loss: 0.8801 | Val Acc: 0.7050 | LR: 5.00e-02
+  2026-02-12 11:56:40,087 - training.engines.hybrid - INFO - Epoch 31/100, Loss: 0.8824 | Acc: 0.7100 | Grad: 8.30e-01 | Val Loss: 0.8668 | Val Acc: 0.7050 | LR: 5.00e-02
+  2026-02-12 11:57:19,405 - training.engines.hybrid - INFO - Epoch 32/100, Loss: 0.8767 | Acc: 0.7120 | Grad: 7.91e-01 | Val Loss: 0.8626 | Val Acc: 0.7200 | LR: 5.00e-02
+  2026-02-12 11:57:59,397 - training.engines.hybrid - INFO - Epoch 33/100, Loss: 0.8688 | Acc: 0.7090 | Grad: 8.81e-01 | Val Loss: 0.8542 | Val Acc: 0.7300 | LR: 5.00e-02
+  2026-02-12 11:58:38,317 - training.engines.hybrid - INFO - Epoch 34/100, Loss: 0.8615 | Acc: 0.7130 | Grad: 8.29e-01 | Val Loss: 0.8447 | Val Acc: 0.7200 | LR: 5.00e-02
+  2026-02-12 11:59:18,327 - training.engines.hybrid - INFO - Epoch 35/100, Loss: 0.8563 | Acc: 0.7040 | Grad: 9.38e-01 | Val Loss: 0.8389 | Val Acc: 0.7250 | LR: 5.00e-02
+  2026-02-12 11:59:59,557 - training.engines.hybrid - INFO - Epoch 36/100, Loss: 0.8491 | Acc: 0.7090 | Grad: 9.35e-01 | Val Loss: 0.8275 | Val Acc: 0.7500 | LR: 5.00e-02
+  2026-02-12 12:00:38,995 - training.engines.hybrid - INFO - Epoch 37/100, Loss: 0.8434 | Acc: 0.7110 | Grad: 9.93e-01 | Val Loss: 0.8222 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:01:19,034 - training.engines.hybrid - INFO - Epoch 38/100, Loss: 0.8374 | Acc: 0.7110 | Grad: 1.17e+00 | Val Loss: 0.8155 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:01:59,314 - training.engines.hybrid - INFO - Epoch 39/100, Loss: 0.8312 | Acc: 0.7140 | Grad: 1.01e+00 | Val Loss: 0.8080 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:02:39,731 - training.engines.hybrid - INFO - Epoch 40/100, Loss: 0.8288 | Acc: 0.7160 | Grad: 1.20e+00 | Val Loss: 0.8089 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:03:20,967 - training.engines.hybrid - INFO - Epoch 41/100, Loss: 0.8258 | Acc: 0.7140 | Grad: 1.06e+00 | Val Loss: 0.8051 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:04:01,663 - training.engines.hybrid - INFO - Epoch 42/100, Loss: 0.8238 | Acc: 0.7150 | Grad: 1.11e+00 | Val Loss: 0.8077 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:04:42,678 - training.engines.hybrid - INFO - Epoch 43/100, Loss: 0.8219 | Acc: 0.7180 | Grad: 1.02e+00 | Val Loss: 0.8058 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:05:24,729 - training.engines.hybrid - INFO - Epoch 44/100, Loss: 0.8203 | Acc: 0.7150 | Grad: 1.23e+00 | Val Loss: 0.7980 | Val Acc: 0.7650 | LR: 5.00e-02
+  2026-02-12 12:06:04,917 - training.engines.hybrid - INFO - Epoch 45/100, Loss: 0.8184 | Acc: 0.7190 | Grad: 9.72e-01 | Val Loss: 0.7958 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:06:46,033 - training.engines.hybrid - INFO - Epoch 46/100, Loss: 0.8164 | Acc: 0.7240 | Grad: 1.28e+00 | Val Loss: 0.7906 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:07:28,289 - training.engines.hybrid - INFO - Epoch 47/100, Loss: 0.8155 | Acc: 0.7210 | Grad: 1.14e+00 | Val Loss: 0.7918 | Val Acc: 0.7500 | LR: 5.00e-02
+  2026-02-12 12:08:09,171 - training.engines.hybrid - INFO - Epoch 48/100, Loss: 0.8123 | Acc: 0.7190 | Grad: 1.31e+00 | Val Loss: 0.7905 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:08:48,817 - training.engines.hybrid - INFO - Epoch 49/100, Loss: 0.8120 | Acc: 0.7160 | Grad: 1.13e+00 | Val Loss: 0.7870 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:09:31,348 - training.engines.hybrid - INFO - Epoch 50/100, Loss: 0.8109 | Acc: 0.7150 | Grad: 1.18e+00 | Val Loss: 0.7871 | Val Acc: 0.7650 | LR: 5.00e-02
+  2026-02-12 12:10:12,264 - training.engines.hybrid - INFO - Epoch 51/100, Loss: 0.8130 | Acc: 0.7200 | Grad: 1.26e+00 | Val Loss: 0.7855 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:10:52,403 - training.engines.hybrid - INFO - Epoch 52/100, Loss: 0.8131 | Acc: 0.7170 | Grad: 1.26e+00 | Val Loss: 0.7923 | Val Acc: 0.7500 | LR: 5.00e-02
+  2026-02-12 12:11:31,907 - training.engines.hybrid - INFO - Epoch 53/100, Loss: 0.8133 | Acc: 0.7070 | Grad: 1.30e+00 | Val Loss: 0.7808 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:12:12,865 - training.engines.hybrid - INFO - Epoch 54/100, Loss: 0.8118 | Acc: 0.7150 | Grad: 1.26e+00 | Val Loss: 0.7836 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:12:53,189 - training.engines.hybrid - INFO - Epoch 55/100, Loss: 0.8125 | Acc: 0.7110 | Grad: 1.25e+00 | Val Loss: 0.7807 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:13:33,095 - training.engines.hybrid - INFO - Epoch 56/100, Loss: 0.8116 | Acc: 0.7090 | Grad: 1.25e+00 | Val Loss: 0.7823 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:14:12,878 - training.engines.hybrid - INFO - Epoch 57/100, Loss: 0.8109 | Acc: 0.7130 | Grad: 1.29e+00 | Val Loss: 0.7816 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:14:54,567 - training.engines.hybrid - INFO - Epoch 58/100, Loss: 0.8095 | Acc: 0.7070 | Grad: 1.32e+00 | Val Loss: 0.7748 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:15:36,113 - training.engines.hybrid - INFO - Epoch 59/100, Loss: 0.8099 | Acc: 0.7120 | Grad: 1.35e+00 | Val Loss: 0.7783 | Val Acc: 0.7600 | LR: 5.00e-02
+  2026-02-12 12:16:16,403 - training.engines.hybrid - INFO - Epoch 60/100, Loss: 0.8098 | Acc: 0.7100 | Grad: 1.21e+00 | Val Loss: 0.7793 | Val Acc: 0.7500 | LR: 5.00e-02
+  2026-02-12 12:16:55,201 - training.engines.hybrid - INFO - Epoch 61/100, Loss: 0.8099 | Acc: 0.7100 | Grad: 1.28e+00 | Val Loss: 0.7744 | Val Acc: 0.7550 | LR: 5.00e-02
+  2026-02-12 12:17:35,638 - training.engines.hybrid - INFO - Epoch 62/100, Loss: 0.8089 | Acc: 0.7080 | Grad: 1.30e+00 | Val Loss: 0.7784 | Val Acc: 0.7500 | LR: 5.00e-02
+  2026-02-12 12:18:15,971 - training.engines.hybrid - INFO - Epoch 63/100, Loss: 0.8109 | Acc: 0.7120 | Grad: 1.24e+00 | Val Loss: 0.7831 | Val Acc: 0.7500 | LR: 5.00e-02
+  2026-02-12 12:18:56,351 - training.engines.hybrid - INFO - Epoch 64/100, Loss: 0.8127 | Acc: 0.7050 | Grad: 1.30e+00 | Val Loss: 0.7823 | Val Acc: 0.7450 | LR: 5.00e-02
+  2026-02-12 12:19:36,319 - training.engines.hybrid - INFO - Epoch 65/100, Loss: 0.8106 | Acc: 0.7120 | Grad: 1.28e+00 | Val Loss: 0.7855 | Val Acc: 0.7450 | LR: 2.50e-02
+  2026-02-12 12:20:17,893 - training.engines.hybrid - INFO - Epoch 66/100, Loss: 0.8131 | Acc: 0.7080 | Grad: 1.28e+00 | Val Loss: 0.7834 | Val Acc: 0.7600 | LR: 2.50e-02
+  2026-02-12 12:20:57,873 - training.engines.hybrid - INFO - Epoch 67/100, Loss: 0.8109 | Acc: 0.7130 | Grad: 1.27e+00 | Val Loss: 0.7831 | Val Acc: 0.7500 | LR: 2.50e-02
+  2026-02-12 12:21:37,480 - training.engines.hybrid - INFO - Epoch 68/100, Loss: 0.8133 | Acc: 0.7090 | Grad: 1.17e+00 | Val Loss: 0.7819 | Val Acc: 0.7600 | LR: 2.50e-02
+  2026-02-12 12:22:20,312 - training.engines.hybrid - INFO - Epoch 69/100, Loss: 0.8127 | Acc: 0.7060 | Grad: 1.38e+00 | Val Loss: 0.7793 | Val Acc: 0.7600 | LR: 1.25e-02
+  2026-02-12 12:23:00,070 - training.engines.hybrid - INFO - Epoch 70/100, Loss: 0.8118 | Acc: 0.7120 | Grad: 1.28e+00 | Val Loss: 0.7781 | Val Acc: 0.7500 | LR: 1.25e-02
+  2026-02-12 12:23:40,289 - training.engines.hybrid - INFO - Epoch 71/100, Loss: 0.8117 | Acc: 0.7090 | Grad: 1.25e+00 | Val Loss: 0.7773 | Val Acc: 0.7550 | LR: 1.25e-02
+  2026-02-12 12:24:20,310 - training.engines.hybrid - INFO - Epoch 72/100, Loss: 0.8103 | Acc: 0.7070 | Grad: 1.13e+00 | Val Loss: 0.7793 | Val Acc: 0.7550 | LR: 1.25e-02
+  2026-02-12 12:24:59,132 - training.engines.hybrid - INFO - Epoch 73/100, Loss: 0.8102 | Acc: 0.7090 | Grad: 1.30e+00 | Val Loss: 0.7745 | Val Acc: 0.7600 | LR: 6.25e-03
+  2026-02-12 12:25:40,248 - training.engines.hybrid - INFO - Epoch 74/100, Loss: 0.8091 | Acc: 0.7050 | Grad: 1.30e+00 | Val Loss: 0.7754 | Val Acc: 0.7600 | LR: 6.25e-03
+  2026-02-12 12:26:20,068 - training.engines.hybrid - INFO - Epoch 75/100, Loss: 0.8081 | Acc: 0.7130 | Grad: 1.35e+00 | Val Loss: 0.7749 | Val Acc: 0.7650 | LR: 6.25e-03
+  2026-02-12 12:27:02,536 - training.engines.hybrid - INFO - Epoch 76/100, Loss: 0.8077 | Acc: 0.7070 | Grad: 1.28e+00 | Val Loss: 0.7722 | Val Acc: 0.7700 | LR: 6.25e-03
+  2026-02-12 12:27:44,248 - training.engines.hybrid - INFO - Epoch 77/100, Loss: 0.8076 | Acc: 0.7060 | Grad: 1.32e+00 | Val Loss: 0.7740 | Val Acc: 0.7450 | LR: 6.25e-03
+  2026-02-12 12:28:24,789 - training.engines.hybrid - INFO - Epoch 78/100, Loss: 0.8067 | Acc: 0.7130 | Grad: 1.26e+00 | Val Loss: 0.7722 | Val Acc: 0.7550 | LR: 6.25e-03
+  2026-02-12 12:29:05,815 - training.engines.hybrid - INFO - Epoch 79/100, Loss: 0.8062 | Acc: 0.7130 | Grad: 1.27e+00 | Val Loss: 0.7696 | Val Acc: 0.7650 | LR: 6.25e-03
+  2026-02-12 12:29:45,422 - training.engines.hybrid - INFO - Epoch 80/100, Loss: 0.8059 | Acc: 0.7160 | Grad: 1.39e+00 | Val Loss: 0.7743 | Val Acc: 0.7650 | LR: 6.25e-03
+  2026-02-12 12:30:24,875 - training.engines.hybrid - INFO - Epoch 81/100, Loss: 0.8056 | Acc: 0.7140 | Grad: 1.38e+00 | Val Loss: 0.7744 | Val Acc: 0.7550 | LR: 6.25e-03
+  2026-02-12 12:31:04,650 - training.engines.hybrid - INFO - Epoch 82/100, Loss: 0.8046 | Acc: 0.7110 | Grad: 1.29e+00 | Val Loss: 0.7740 | Val Acc: 0.7500 | LR: 6.25e-03
+  2026-02-12 12:31:44,837 - training.engines.hybrid - INFO - Epoch 83/100, Loss: 0.8055 | Acc: 0.7100 | Grad: 1.35e+00 | Val Loss: 0.7684 | Val Acc: 0.7550 | LR: 6.25e-03
+  2026-02-12 12:32:28,249 - training.engines.hybrid - INFO - Epoch 84/100, Loss: 0.8043 | Acc: 0.7100 | Grad: 1.34e+00 | Val Loss: 0.7684 | Val Acc: 0.7600 | LR: 6.25e-03
+  2026-02-12 12:33:09,739 - training.engines.hybrid - INFO - Epoch 85/100, Loss: 0.8040 | Acc: 0.7100 | Grad: 1.38e+00 | Val Loss: 0.7707 | Val Acc: 0.7450 | LR: 6.25e-03
+  2026-02-12 12:33:52,774 - training.engines.hybrid - INFO - Epoch 86/100, Loss: 0.8034 | Acc: 0.7130 | Grad: 1.31e+00 | Val Loss: 0.7699 | Val Acc: 0.7550 | LR: 6.25e-03
+  2026-02-12 12:34:32,766 - training.engines.hybrid - INFO - Epoch 87/100, Loss: 0.8031 | Acc: 0.7070 | Grad: 1.26e+00 | Val Loss: 0.7638 | Val Acc: 0.7500 | LR: 6.25e-03
+  2026-02-12 12:35:15,780 - training.engines.hybrid - INFO - Epoch 88/100, Loss: 0.8023 | Acc: 0.7090 | Grad: 1.39e+00 | Val Loss: 0.7655 | Val Acc: 0.7550 | LR: 6.25e-03
+  2026-02-12 12:35:55,525 - training.engines.hybrid - INFO - Epoch 89/100, Loss: 0.8023 | Acc: 0.7120 | Grad: 1.60e+00 | Val Loss: 0.7695 | Val Acc: 0.7600 | LR: 6.25e-03
+  2026-02-12 12:36:35,428 - training.engines.hybrid - INFO - Epoch 90/100, Loss: 0.8009 | Acc: 0.7110 | Grad: 1.40e+00 | Val Loss: 0.7690 | Val Acc: 0.7550 | LR: 6.25e-03
+  2026-02-12 12:37:14,603 - training.engines.hybrid - INFO - Epoch 91/100, Loss: 0.8004 | Acc: 0.7060 | Grad: 1.13e+00 | Val Loss: 0.7661 | Val Acc: 0.7600 | LR: 3.13e-03
+  2026-02-12 12:37:54,574 - training.engines.hybrid - INFO - Epoch 92/100, Loss: 0.8008 | Acc: 0.7110 | Grad: 1.24e+00 | Val Loss: 0.7684 | Val Acc: 0.7550 | LR: 3.13e-03
+  2026-02-12 12:38:34,887 - training.engines.hybrid - INFO - Epoch 93/100, Loss: 0.8015 | Acc: 0.7110 | Grad: 1.33e+00 | Val Loss: 0.7688 | Val Acc: 0.7500 | LR: 3.13e-03
+  2026-02-12 12:39:15,503 - training.engines.hybrid - INFO - Epoch 94/100, Loss: 0.8015 | Acc: 0.7100 | Grad: 1.36e+00 | Val Loss: 0.7677 | Val Acc: 0.7600 | LR: 3.13e-03
+  2026-02-12 12:39:55,694 - training.engines.hybrid - INFO - Epoch 95/100, Loss: 0.8022 | Acc: 0.7070 | Grad: 1.17e+00 | Val Loss: 0.7647 | Val Acc: 0.7500 | LR: 1.56e-03
+  2026-02-12 12:40:35,121 - training.engines.hybrid - INFO - Epoch 96/100, Loss: 0.8003 | Acc: 0.7140 | Grad: 1.32e+00 | Val Loss: 0.7699 | Val Acc: 0.7650 | LR: 1.56e-03
+  2026-02-12 12:41:14,503 - training.engines.hybrid - INFO - Epoch 97/100, Loss: 0.8004 | Acc: 0.7100 | Grad: 1.33e+00 | Val Loss: 0.7655 | Val Acc: 0.7450 | LR: 1.56e-03
+  2026-02-12 12:41:56,647 - training.engines.hybrid - INFO - Epoch 98/100, Loss: 0.8011 | Acc: 0.7110 | Grad: 1.20e+00 | Val Loss: 0.7671 | Val Acc: 0.7550 | LR: 1.56e-03
+  2026-02-12 12:42:37,868 - training.engines.hybrid - INFO - Epoch 99/100, Loss: 0.8002 | Acc: 0.7140 | Grad: 1.46e+00 | Val Loss: 0.7642 | Val Acc: 0.7600 | LR: 7.81e-04
+  2026-02-12 12:43:18,223 - training.engines.hybrid - INFO - Epoch 100/100, Loss: 0.7987 | Acc: 0.7140 | Grad: 1.30e+00 | Val Loss: 0.7684 | Val Acc: 0.7600 | LR: 7.81e-04
+  2026-02-12 12:43:20,318 - training.pipeline - INFO - Pipeline Execution Complete. Final Score: 0.6750
+  2026-02-12 12:43:20,319 - utils.logger - INFO - Experiment data saved to ./output/None_angle_autoencoder16_20260212_114123
+  2026-02-12 12:43:20,518 - utils.logger - INFO - Model saved to: ./output/None_angle_autoencoder16_20260212_114123/model/None_angle_autoencoder16_20260212_114123_trained_qcnn.pth
+  2026-02-12 12:43:20,518 - utils.notifications - INFO - Attempting LINE notification. Token length: 172, Preview: wtCCm...ilFU=
+  2026-02-12 12:43:20,771 - utils.notifications - INFO - LINE Messaging API notification sent successfully.
