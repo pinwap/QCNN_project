@@ -1,11 +1,16 @@
 import logging
 import time
+import os
 from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from models.hybrid.end_to_end import HybridAutoencoderQCNN
 from training.strategies.base import EvaluationStrategy
@@ -50,6 +55,7 @@ class HybridEndToEndStrategy(EvaluationStrategy):
         y_test: torch.Tensor,
         x_val: Optional[torch.Tensor] = None,
         y_val: Optional[torch.Tensor] = None,
+        save_dir: str = "./output" # Added save_dir
     ) -> Tuple[float, Any]: # คืนค่าความแม่นยำและ state dict ของโมเดลที่ดีที่สุด
         
         # 1. Prepare Model
@@ -169,4 +175,63 @@ class HybridEndToEndStrategy(EvaluationStrategy):
         test_acc = test_correct / test_total
         logger.info(f"Final Test Accuracy: {test_acc:.4f}")
         
+        # --- Visualization Start ---
+        try:
+            self._visualize_latent(model, x_test, y_test, save_dir)
+        except Exception as e:
+            logger.error(f"Failed to visualize latent space: {e}")
+        # --- Visualization End ---
+        
         return test_acc, history, model.state_dict()
+
+    def _visualize_latent(self, model, x_test, y_test, save_dir):
+        """
+        Visualize latent vectors for a few samples from each class.
+        Includes original images and their 16-dim latent representations.
+        """
+        logger.info("Generating Latent Space Visualization...")
+        plots_dir = os.path.join(save_dir, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+        
+        # pick first few samples.
+        num_samples = 4
+        indices = range(min(num_samples, len(x_test)))
+        
+        fig, axes = plt.subplots(len(indices), 2, figsize=(10, 4 * len(indices)))
+        if len(indices) == 1: axes = axes.reshape(1, -1)
+        
+        model.eval()
+        with torch.no_grad():
+            for i, idx in enumerate(indices):
+                img = x_test[idx].unsqueeze(0).to(self.device) # [1, 1, 28, 28]
+                target = y_test[idx].item()
+                
+                # Encode
+                latent = model.encoder(img)
+                latent_vec = latent.cpu().numpy().flatten()
+                
+                # Predict
+                output = model(img).item()
+                pred_label = 1 if output > 0 else -1
+                
+                # Plot Image
+                ax_img = axes[i, 0]
+                img_np = img.cpu().squeeze().numpy()
+                ax_img.imshow(img_np, cmap='gray')
+                ax_img.set_title(f"Sample {idx}\nTarget: {target}")
+                ax_img.axis('off')
+                
+                # Plot Latent
+                ax_lat = axes[i, 1]
+                ax_lat.bar(range(len(latent_vec)), latent_vec, color='teal')
+                ax_lat.set_ylim(0, 1)
+                ax_lat.set_title(f"Latent Rep. (Pred: {output:.2f})")
+                ax_lat.set_xlabel("Dim")
+        
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        save_path = os.path.join(plots_dir, f"latent_vis_{timestamp}.png")
+        plt.tight_layout()
+        plt.savefig(save_path)
+        plt.close()
+        logger.info(f"Latent visualization saved to {save_path}")
+
